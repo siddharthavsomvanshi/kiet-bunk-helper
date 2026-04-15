@@ -1644,7 +1644,7 @@ function SetupCard({ hasData }: { hasData: boolean }) {
         className="action-button action-button--primary"
         style={{ padding: "14px 28px", alignSelf: "start", justifySelf: "start", background: "#0f172a", color: "#fff", border: "none", borderRadius: 999, fontWeight: 700, cursor: "pointer", fontSize: 15, boxShadow: "0 8px 20px rgba(15, 23, 42, 0.15)" }}
         onClick={() => {
-          window.open("/bunk-helper-extension.zip", "_blank");
+          window.open("/bunk-helper-extension.zip?v=0.1.1", "_blank");
         }}
       >
         ⬇️ Download Extension
