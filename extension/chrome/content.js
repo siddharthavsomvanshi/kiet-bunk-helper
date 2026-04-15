@@ -1,6 +1,6 @@
 console.log("KIET Auth Bridge content script active on", window.location.href);
 
-const APP_HOST_MATCHERS = ["localhost", "127.0.0.1", "cybervidya.pages.dev", "vercel.app"];
+const APP_HOST_MATCHERS = ["localhost", "127.0.0.1", "cybervidya.pages.dev", "kiet-bunk-helper.vercel.app"];
 const BRIDGE_APP_SOURCE = "kiet-dashboard-app";
 const BRIDGE_EXTENSION_SOURCE = "kiet-auth-extension";
 
