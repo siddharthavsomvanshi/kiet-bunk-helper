@@ -45,6 +45,17 @@ type SubjectSummary = {
   bunkImpact: number;
 };
 
+type OverallSummary = {
+  present: number;
+  total: number;
+  upcomingCount: number;
+  plannedBunkCount: number;
+  projectedPresent: number;
+  projectedTotal: number;
+  percentage: number;
+  projectedPercentage: number;
+};
+
 type RecoveryStatus = "no_selection" | "safe" | "recoverable" | "not_recovered";
 
 type RecoveryInsight = {
