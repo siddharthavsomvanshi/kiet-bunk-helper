@@ -386,37 +386,40 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const marker = document.getElementById("kiet-extension-installed");
     const searchParams = new URLSearchParams(window.location.search);
-
     if (searchParams.get("session")) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    if (!marker) {
-      setExtensionDetected(false);
-      return;
+    let isMounted = true;
+    let attempts = 0;
+
+    function checkAndPing() {
+      if (!isMounted) return;
+
+      const marker = document.getElementById("kiet-extension-installed");
+
+      if (marker) {
+        callExtension("PING", {})
+          .then(() => {
+            if (!isMounted) return;
+            setExtensionDetected(true);
+            return syncDashboard();
+          })
+          .catch((caughtError) => {
+            if (!isMounted) return;
+            setExtensionDetected(false);
+            setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
+          });
+      } else if (attempts < 15) {
+        attempts++;
+        setTimeout(checkAndPing, 100);
+      } else {
+        setExtensionDetected(false);
+      }
     }
 
-    let isMounted = true;
-
-    callExtension("PING", {})
-      .then(() => {
-        if (!isMounted) {
-          return;
-        }
-
-        setExtensionDetected(true);
-        return syncDashboard();
-      })
-      .catch((caughtError) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setExtensionDetected(false);
-        setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
-      });
+    checkAndPing();
 
     return () => {
       isMounted = false;
