@@ -1,51 +1,50 @@
 import { useState } from "react";
 import type { ScheduleEntry } from "../../types/kiet";
 
-interface RedemptionArcProps {
-  subjectSummaries: { present: number; total: number }[];
-  upcomingClasses: ScheduleEntry[];
+interface BunkableDay {
+  dateKey: string;
+  label: string;
+  entries: ScheduleEntry[];
 }
 
-export function RedemptionArc({ subjectSummaries, upcomingClasses }: RedemptionArcProps) {
+interface OverallSummary {
+  present: number;
+  total: number;
+}
+
+interface RedemptionArcProps {
+  data: OverallSummary | null;
+  schedule: BunkableDay[];
+}
+
+export function RedemptionArc({ data, schedule }: RedemptionArcProps) {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [result, setResult] = useState<{ percentage: number; classesAdded: number } | null>(null);
 
   const handleCalculate = () => {
-    if (!selectedDate) {
+    if (!selectedDate || !data) {
       setResult(null);
       return;
     }
 
-    const cutoffDate = new Date(selectedDate);
-    // Include all classes on the selected date by setting time to end of day
-    cutoffDate.setHours(23, 59, 59, 999);
+    const currentAttended = data.present;
+    const currentTotal = data.total;
 
-    let currentAttended = 0;
-    let currentTotal = 0;
-
-    // 1. Sum current attendance
-    for (const subject of subjectSummaries) {
-      currentAttended += subject.present;
-      currentTotal += subject.total;
-    }
-
-    // 2. Filter upcoming classes up to the selected date
-    let upcomingClassesCount = 0;
-    for (const entry of upcomingClasses) {
-      if (entry.start) {
-        const classDate = new Date(entry.start);
-        if (classDate <= cutoffDate) {
-          upcomingClassesCount += 1;
-        }
+    let classesAdded = 0;
+    
+    // Use the exact same filtered and grouped calendar schedule as Attendance Sniper
+    for (const day of schedule) {
+      // String comparison works perfectly here because both are YYYY-MM-DD
+      if (day.dateKey <= selectedDate) {
+        classesAdded += day.entries.length;
       }
     }
 
-    // 3. Compute the future percentage
-    const futureTotal = currentTotal + upcomingClassesCount;
-    const futureAttended = currentAttended + upcomingClassesCount;
+    const futureTotal = currentTotal + classesAdded;
+    const futureAttended = currentAttended + classesAdded;
     const futurePercentage = futureTotal > 0 ? (futureAttended / futureTotal) * 100 : 0;
 
-    setResult({ percentage: futurePercentage, classesAdded: upcomingClassesCount });
+    setResult({ percentage: futurePercentage, classesAdded });
   };
 
   return (

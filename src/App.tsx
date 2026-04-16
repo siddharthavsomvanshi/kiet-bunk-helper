@@ -1548,7 +1548,7 @@ function App() {
         </section>
 
         <section style={{ display: "grid", gap: 14 }}>
-          <RedemptionArc subjectSummaries={subjectSummaries} upcomingClasses={futureClasses} />
+          <RedemptionArc data={overallSummary} schedule={bunkableDays} />
         </section>
 
         <section style={{ display: "grid", gap: 14 }}>
