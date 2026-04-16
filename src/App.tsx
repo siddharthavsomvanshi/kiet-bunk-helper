@@ -1090,7 +1090,7 @@ function App() {
                               fontWeight: 700,
                             }}
                           >
-                            After upcoming: {overallSummary.projectedPercentage.toFixed(1)}%
+                            After attending all remaining classes of week: {overallSummary.projectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -1101,7 +1101,7 @@ function App() {
                         healthy={overallSummary.percentage >= 75}
                       />
                       <ProgressBar
-                        label={`After upcoming (${overallSummary.upcomingCount} upcoming)`}
+                        label={`After attending all remaining classes of week (${overallSummary.upcomingCount} upcoming)`}
                         percentage={overallSummary.projectedPercentage}
                         healthy={overallSummary.projectedPercentage >= 75}
                       />
@@ -1187,7 +1187,7 @@ function App() {
                               fontWeight: 700,
                             }}
                           >
-                            After upcoming: {subject.projectedPercentage.toFixed(1)}%
+                            After attending all remaining classes of week: {subject.projectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -1198,7 +1198,7 @@ function App() {
                         healthy={subject.percentage >= 75}
                       />
                       <ProgressBar
-                        label={`After upcoming (${subject.upcomingCount} upcoming)`}
+                        label={`After attending all remaining classes of week (${subject.upcomingCount} upcoming)`}
                         percentage={subject.projectedPercentage}
                         healthy={subject.projectedPercentage >= 75}
                       />
