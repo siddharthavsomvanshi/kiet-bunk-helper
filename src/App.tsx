@@ -15,6 +15,11 @@ import {
   getWeekRange,
   parseKietDateTime,
 } from "./utils/date";
+import {
+  calculateStrictStreak,
+  fetchGlobalDatewiseAttendance,
+} from "./utils/streak";
+import type { StreakResult, StreakSubjectConfig } from "./utils/streak";
 
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 
@@ -119,12 +124,27 @@ function App() {
   const [datewiseLoading, setDatewiseLoading] = useState<Set<string>>(new Set());
   const [datewiseErrors, setDatewiseErrors] = useState<Record<string, string>>({});
   const [selectedBunkDates, setSelectedBunkDates] = useState<Set<string>>(new Set());
+  const [streakResult, setStreakResult] = useState<StreakResult | null>(null);
+  const [streakLoading, setStreakLoading] = useState(false);
   const [error, setError] = useState("");
 
   const studentContext = useMemo(
     () => studentContextOverride ?? getStudentContext(attendance),
     [attendance, studentContextOverride],
   );
+
+  const streakSubjects = useMemo<StreakSubjectConfig[]>(() => {
+    if (!attendance) {
+      return [];
+    }
+
+    return attendance.attendanceCourseComponentInfoList.flatMap((course) =>
+      course.attendanceCourseComponentNameInfoList.map((component) => ({
+        courseId: course.courseId,
+        courseComponentId: component.courseComponentId,
+      })),
+    );
+  }, [attendance]);
 
   const subjectSummaries = useMemo<SubjectSummary[]>(() => {
     if (!attendance) {
@@ -317,9 +337,72 @@ function App() {
     };
   }, [overallSummary, futureClasses, selectedBunkDates]);
 
+  useEffect(() => {
+    if (!attendance) {
+      setStreakResult(null);
+      setStreakLoading(false);
+      return;
+    }
+
+    if (!studentContext) {
+      setStreakResult({
+        streak: null,
+        isReliable: false,
+        lastUpdated: Date.now(),
+      });
+      setStreakLoading(false);
+      return;
+    }
+
+    if (streakSubjects.length === 0) {
+      setStreakResult({
+        streak: 0,
+        isReliable: true,
+        lastUpdated: Date.now(),
+      });
+      setStreakLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setStreakLoading(true);
+
+    void (async () => {
+      try {
+        const fetchResult = await fetchGlobalDatewiseAttendance(
+          studentContext.studentId,
+          studentContext.sessionId,
+          streakSubjects,
+        );
+        const nextResult = calculateStrictStreak(fetchResult);
+
+        if (!isCancelled) {
+          setStreakResult(nextResult);
+        }
+      } catch {
+        if (!isCancelled) {
+          setStreakResult({
+            streak: null,
+            isReliable: false,
+            lastUpdated: Date.now(),
+          });
+        }
+      } finally {
+        if (!isCancelled) {
+          setStreakLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [attendance, studentContext, streakSubjects]);
+
   const syncDashboard = useCallback(async () => {
     setLoadState("loading");
     setError("");
+    setStreakLoading(true);
 
     try {
       const sessionStatus = await callExtension("GET_SESSION_STATUS", {});
@@ -335,6 +418,8 @@ function App() {
         setDatewiseErrors({});
         setStudentContextOverride(null);
         setShowWholeDayPlanner(false);
+        setStreakResult(null);
+        setStreakLoading(false);
         setLoadState("idle");
         return;
       }
@@ -383,6 +468,8 @@ function App() {
       setStudentContextOverride(null);
       setUpcomingClasses([]);
       setFutureClasses([]);
+      setStreakResult(null);
+      setStreakLoading(false);
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }
   }, []);
@@ -457,6 +544,8 @@ function App() {
       setShowWholeDayPlanner(false);
       setSelectedBunkDates(new Set());
       setSessionCapturedAt(null);
+      setStreakResult(null);
+      setStreakLoading(false);
       setLoadState("idle");
       window.location.href = "https://kiet.cybervidya.net/?action=logout";
     } catch (caughtError) {
@@ -1118,18 +1207,16 @@ function App() {
                         }}
                       >
                         <Metric label="Present" value={String(overallSummary.present)} />
-                        <Metric label="Total Classes" value={String(overallSummary.total)} />
+                        <Metric label="Total" value={String(overallSummary.total)} />
                         <Metric
-                          label="Projected Present"
+                          label="Projected"
                           value={`${overallSummary.projectedPresent}/${overallSummary.projectedTotal}`}
                         />
+                        <Metric label="Planned" value={String(overallSummary.plannedBunkCount)} />
+                        <Metric label="Upcoming" value={String(overallSummary.upcomingCount)} />
                         <Metric
-                          label="Planned Bunks"
-                          value={String(overallSummary.plannedBunkCount)}
-                        />
-                        <Metric
-                          label="Upcoming Classes"
-                          value={String(overallSummary.upcomingCount)}
+                          label="🔥 STREAK"
+                          value={formatStreakMetricValue(streakResult, streakLoading)}
                         />
                       </div>
                     </div>
@@ -2129,6 +2216,22 @@ function incrementCount(counter: Map<string, number>, key: string) {
 function formatPercentageDelta(value: number): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)} pts`;
+}
+
+function formatStreakMetricValue(result: StreakResult | null, isLoading: boolean): string {
+  if (isLoading || !result) {
+    return "Loading...";
+  }
+
+  if (!result.isReliable || result.streak === null) {
+    return "Data syncing…";
+  }
+
+  if (result.streak === 0) {
+    return "0 days 😭";
+  }
+
+  return `${result.streak} day${result.streak === 1 ? "" : "s"} in a row 🚀`;
 }
 
 function getStudentContext(attendance: StudentDetails | null): StudentContext | null {
