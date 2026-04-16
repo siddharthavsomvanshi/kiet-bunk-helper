@@ -1068,7 +1068,7 @@ function App() {
                           flexWrap: "wrap",
                         }}
                       >
-                        <div>
+                        <div style={{ flex: 1, minWidth: 160 }}>
                           <div style={{ fontWeight: 800, fontSize: 18 }}>Overall Attendance</div>
                           <div style={{ color: "#64748b", fontSize: 13 }}>
                             Combined across all attendance components
@@ -1090,7 +1090,7 @@ function App() {
                               fontWeight: 700,
                             }}
                           >
-                            After attending all remaining classes of week: {overallSummary.projectedPercentage.toFixed(1)}%
+                            If attended all remaining: {overallSummary.projectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -1101,7 +1101,7 @@ function App() {
                         healthy={overallSummary.percentage >= 75}
                       />
                       <ProgressBar
-                        label={`After attending all remaining classes of week (${overallSummary.upcomingCount} upcoming)`}
+                        label={`If attended all remaining (${overallSummary.upcomingCount} upcoming)`}
                         percentage={overallSummary.projectedPercentage}
                         healthy={overallSummary.projectedPercentage >= 75}
                       />
@@ -1168,7 +1168,7 @@ function App() {
                           flexWrap: "wrap",
                         }}
                       >
-                        <div>
+                        <div style={{ flex: 1, minWidth: 120 }}>
                           <div style={{ fontWeight: 700 }}>{subject.title}</div>
                           <div style={{ color: "#64748b", fontSize: 13 }}>
                             {subject.courseCode} - {subject.componentName}
@@ -1187,7 +1187,7 @@ function App() {
                               fontWeight: 700,
                             }}
                           >
-                            After attending all remaining classes of week: {subject.projectedPercentage.toFixed(1)}%
+                            If attended all remaining: {subject.projectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -1198,7 +1198,7 @@ function App() {
                         healthy={subject.percentage >= 75}
                       />
                       <ProgressBar
-                        label={`After attending all remaining classes of week (${subject.upcomingCount} upcoming)`}
+                        label={`If attended all remaining (${subject.upcomingCount} upcoming)`}
                         percentage={subject.projectedPercentage}
                         healthy={subject.projectedPercentage >= 75}
                       />
