@@ -16,6 +16,8 @@ import {
   parseKietDateTime,
 } from "./utils/date";
 
+import { RedemptionArc } from "./components/Attendance/RedemptionArc";
+
 type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
 
@@ -1545,6 +1547,9 @@ function App() {
           <AttendanceSniper data={overallSummary} schedule={bunkableDays} />
         </section>
 
+        <section style={{ display: "grid", gap: 14 }}>
+          <RedemptionArc subjectSummaries={subjectSummaries} upcomingClasses={futureClasses} />
+        </section>
 
         <section style={{ display: "grid", gap: 14 }}>
           <Panel
