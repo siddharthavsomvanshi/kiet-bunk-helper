@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DatewiseAttendanceBucket,
   DatewiseAttendanceLecture,
@@ -131,6 +131,36 @@ function App() {
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null);
   const [streakLoading, setStreakLoading] = useState(false);
   const [error, setError] = useState("");
+  const syncRequestIdRef = useRef(0);
+
+  function beginSyncRequest() {
+    syncRequestIdRef.current += 1;
+    return syncRequestIdRef.current;
+  }
+
+  function isCurrentSyncRequest(syncRequestId: number) {
+    return syncRequestIdRef.current === syncRequestId;
+  }
+
+  function applyScheduleState(currentWeekSchedule: ScheduleEntry[], allWeekSchedules: ScheduleEntry[]) {
+    const currentUpcomingClasses = getUpcomingClasses(currentWeekSchedule);
+    const allFutureClasses = getUpcomingClasses(allWeekSchedules);
+    const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
+
+    setUpcomingClasses(currentUpcomingClasses);
+    setFutureClasses(allFutureClasses);
+    setSelectedBunkDates((previous) => {
+      const next = new Set<string>();
+
+      for (const dateKey of previous) {
+        if (availableBunkDates.has(dateKey)) {
+          next.add(dateKey);
+        }
+      }
+
+      return next;
+    });
+  }
 
   const studentContext = useMemo(
     () => studentContextOverride ?? getStudentContext(attendance),
@@ -404,12 +434,18 @@ function App() {
   }, [attendance, studentContext, streakSubjects]);
 
   const syncDashboard = useCallback(async () => {
+    const syncRequestId = beginSyncRequest();
     setLoadState("loading");
     setError("");
     setStreakLoading(true);
 
     try {
       const sessionStatus = await callExtension("GET_SESSION_STATUS", {});
+
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
+      }
+
       setSessionCapturedAt(sessionStatus.capturedAt);
 
       if (!sessionStatus.hasToken) {
@@ -429,46 +465,83 @@ function App() {
       }
 
       const now = new Date();
-      const [attendanceData, fetchedStudentInfo] = await Promise.all([
-        callExtension("FETCH_ATTENDANCE", {}),
-        callExtension("FETCH_STUDENT_ID", {}),
-      ]);
+      const weekRanges = Array.from({ length: FUTURE_WEEKS_TO_FETCH }, (_, weekOffset) =>
+        getWeekRange(now, weekOffset),
+      );
+      const attendanceData = await callExtension("FETCH_ATTENDANCE", {});
 
-      const fetchedWeekSchedules = [];
-      for (let weekOffset = 0; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
-        fetchedWeekSchedules.push(
-          await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
-        );
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
       }
 
-      const currentWeekSchedule = fetchedWeekSchedules[0] ?? [];
-      const allFutureClasses = getUpcomingClasses(fetchedWeekSchedules.flat());
-      const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
-
       setAttendance(attendanceData);
-      setStudentContextOverride(
-        fetchedStudentInfo.studentId === null
-          ? null
-          : {
-              studentId: fetchedStudentInfo.studentId,
-              sessionId: fetchedStudentInfo.sessionId,
-            },
-      );
-      setUpcomingClasses(getUpcomingClasses(currentWeekSchedule));
-      setFutureClasses(allFutureClasses);
-      setSelectedBunkDates((previous) => {
-        const next = new Set<string>();
+      setStudentContextOverride(null);
+      setUpcomingClasses([]);
+      setFutureClasses([]);
+      setLoadState("ready");
 
-        for (const dateKey of previous) {
-          if (availableBunkDates.has(dateKey)) {
-            next.add(dateKey);
+      void (async () => {
+        try {
+          const fetchedStudentInfo = await callExtension("FETCH_STUDENT_ID", {});
+
+          if (!isCurrentSyncRequest(syncRequestId)) {
+            return;
           }
+
+          setStudentContextOverride(
+            fetchedStudentInfo.studentId === null
+              ? null
+              : {
+                  studentId: fetchedStudentInfo.studentId,
+                  sessionId: fetchedStudentInfo.sessionId,
+                },
+          );
+        } catch {
+          if (!isCurrentSyncRequest(syncRequestId)) {
+            return;
+          }
+
+          setStudentContextOverride(null);
+        }
+      })();
+
+      void (async () => {
+        let currentWeekSchedule: ScheduleEntry[] = [];
+
+        try {
+          currentWeekSchedule = await callExtension("FETCH_SCHEDULE", weekRanges[0]);
+        } catch {
+          currentWeekSchedule = [];
         }
 
-        return next;
-      });
-      setLoadState("ready");
+        if (!isCurrentSyncRequest(syncRequestId)) {
+          return;
+        }
+
+        applyScheduleState(currentWeekSchedule, currentWeekSchedule);
+
+        const futureWeekResults = await Promise.allSettled(
+          weekRanges.slice(1).map((weekRange) => callExtension("FETCH_SCHEDULE", weekRange)),
+        );
+
+        if (!isCurrentSyncRequest(syncRequestId)) {
+          return;
+        }
+
+        const allWeekSchedules = [
+          ...currentWeekSchedule,
+          ...futureWeekResults.flatMap((result) =>
+            result.status === "fulfilled" ? result.value : [],
+          ),
+        ];
+
+        applyScheduleState(currentWeekSchedule, allWeekSchedules);
+      })();
     } catch (caughtError) {
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
+      }
+
       setLoadState("error");
       setAttendance(null);
       setStudentContextOverride(null);
@@ -536,6 +609,7 @@ function App() {
 
   async function handleClearSession() {
     try {
+      beginSyncRequest();
       await callExtension("CLEAR_SESSION", {});
       setAttendance(null);
       setUpcomingClasses([]);
