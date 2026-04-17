@@ -21,12 +21,16 @@ import {
 } from "./utils/streak";
 import type { StreakResult, StreakSubjectConfig } from "./utils/streak";
 
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Dashboard } from "./pages/Dashboard";
+import { Strategy } from "./pages/Strategy";
+import { CalendarPage } from "./pages/Calendar";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 
-type LoadState = "idle" | "loading" | "ready" | "error";
+export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
 
-type SubjectSummary = {
+export type SubjectSummary = {
   id: string;
   title: string;
   courseCode: string;
@@ -52,7 +56,7 @@ type SubjectSummary = {
   bunkImpact: number;
 };
 
-type OverallSummary = {
+export type OverallSummary = {
   present: number;
   total: number;
   upcomingCount: number;
@@ -63,9 +67,9 @@ type OverallSummary = {
   projectedPercentage: number;
 };
 
-type RecoveryStatus = "no_selection" | "safe" | "recoverable" | "not_recovered";
+export type RecoveryStatus = "no_selection" | "safe" | "recoverable" | "not_recovered";
 
-type RecoveryInsight = {
+export type RecoveryInsight = {
   status: RecoveryStatus;
   recoveryDateKey: string | null;
   recoveryDateLabel: string | null;
@@ -73,7 +77,7 @@ type RecoveryInsight = {
   recoveryDays: number | null;
 };
 
-type WholeDayPlanSummary = {
+export type WholeDayPlanSummary = {
   id: string;
   title: string;
   courseCode: string;
@@ -87,18 +91,18 @@ type WholeDayPlanSummary = {
   recovery: RecoveryInsight;
 };
 
-type BunkableDay = {
+export type BunkableDay = {
   dateKey: string;
   label: string;
   entries: ScheduleEntry[];
 };
 
-type StudentContext = {
+export type StudentContext = {
   studentId: number | string;
   sessionId: number | string | null;
 };
 
-type DatewiseAttendanceState = {
+export type DatewiseAttendanceState = {
   lectureCount: number;
   presentCount: number;
   percent: number | null;
@@ -660,1065 +664,83 @@ function App() {
     });
   }
 
+  const dashboardData = {
+    extensionDetected,
+    loadState,
+    sessionCapturedAt,
+    attendance,
+    upcomingClasses,
+    streakResult,
+    streakLoading,
+    error,
+    studentContext,
+    subjectSummaries,
+    overallSummary,
+    expandedPlanners,
+    expandedDatewise,
+    datewiseLoading,
+    datewiseErrors,
+    datewiseAttendance,
+    plannedBunks,
+    bunkableDays,
+  };
+
+  const dashboardHandlers = {
+    handleConnectClick,
+    syncDashboard,
+    handleClearSession,
+    handlePlannerToggle,
+    handleDatewiseToggle,
+    handleBunkToggle,
+  };
+
+  const strategyData = {
+    bunkableDays,
+    selectedBunkDates,
+    selectedBunkCutoffDateKey,
+    overallWholeDayPlan,
+    wholeDayPlanSummaries,
+    overallSummary,
+  };
+
+  const strategyHandlers = {
+    handleWholeDayToggle,
+  };
+
+  const calendarData = {
+    upcomingClasses,
+  };
+
   return (
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
-        <section
-          className="hero-card rise-in"
-          style={{
-            display: "grid",
-            gap: 18,
-            padding: 24,
-            borderRadius: 30,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(244, 250, 255, 0.76))",
-            boxShadow: "0 30px 90px rgba(15, 23, 42, 0.10)",
-          }}
-        >
-          <span
-            className="brand-kicker"
-            style={{
-              width: "fit-content",
-              padding: "6px 12px",
-              borderRadius: 999,
-              background: "rgba(255, 255, 255, 0.74)",
-              color: "#0f3b52",
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            Bunk Helper
-          </span>
+        
+        <nav style={{
+          display: "flex",
+          gap: "12px",
+          padding: "16px 24px",
+          borderRadius: "20px",
+          background: "#ffffff",
+          border: "1px solid rgba(15, 23, 42, 0.08)",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)"
+        }}>
+          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Dashboard</Link>
+          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Strategy</Link>
+          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Calendar</Link>
+        </nav>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <h1
-              className="display-title"
-              style={{ margin: 0, fontSize: "clamp(2.5rem, 6vw, 4.9rem)", lineHeight: 0.95 }}
-            >
-              Attendance that feels useful, not buried.
-            </h1>
-            <p className="hero-copy" style={{ margin: 0, maxWidth: 760, color: "#475569", fontSize: 18 }}>
-              The extension keeps your KIET session inside the browser, then fetches attendance and
-              weekly schedule data on demand. No password storage, no token in the URL, and a
-              cleaner base for analytics.
-            </p>
-          </div>
+        <Routes>
+          <Route path="/" element={<Dashboard data={dashboardData} handlers={dashboardHandlers} />} />
+          <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
+          <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+        </Routes>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-            <button
-              className="action-button action-button--primary"
-              type="button"
-              onClick={handleConnectClick}
-              disabled={!extensionDetected}
-              style={primaryButtonStyle(!extensionDetected)}
-            >
-              Connect with KIET ERP
-            </button>
-            <button
-              className="action-button action-button--secondary"
-              type="button"
-              onClick={syncDashboard}
-              style={secondaryButtonStyle}
-            >
-              Refresh dashboard
-            </button>
-            <button
-              className="action-button action-button--secondary"
-              type="button"
-              onClick={handleClearSession}
-              style={secondaryButtonStyle}
-            >
-              Log out
-            </button>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12,
-            }}
-          >
-            <StatusCard
-              title="Extension"
-              value={extensionDetected ? "Detected" : "Not detected"}
-              tone={extensionDetected ? "#166534" : "#991b1b"}
-            />
-            <StatusCard
-              title="Dashboard State"
-              value={loadState === "ready" ? "Synced" : loadState}
-              tone={loadState === "error" ? "#991b1b" : "#1d4ed8"}
-            />
-            <StatusCard
-              title="Session Captured"
-              value={formatCapturedAt(sessionCapturedAt)}
-              tone="#0f172a"
-            />
-            <StatusCard
-              title="Upcoming Classes"
-              value={String(upcomingClasses.length)}
-              tone="#0f172a"
-            />
-          </div>
-
-          {error && <Notice tone="#991b1b" background="#fee2e2">{error}</Notice>}
-        </section>
-
-        {(!extensionDetected || !attendance) ? (
-          <SetupCard hasData={!!attendance} />
-        ) : (
-          <>
-            {attendance && (
-          <section
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12,
-            }}
-          >
-            <StatusCard title="Student" value={attendance.fullName} tone="#0f172a" />
-            <StatusCard title="Registration" value={attendance.registrationNumber} tone="#0f172a" />
-            <StatusCard
-              title="Branch"
-              value={`${attendance.branchShortName} - ${attendance.sectionName}`}
-              tone="#0f172a"
-            />
-            <StatusCard title="Semester" value={attendance.semesterName} tone="#0f172a" />
-          </section>
-        )}
-
-        {showWholeDayPlanner && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Panel
-              title="Whole Day Bunk Planner"
-              subtitle={`Select one or more future dates. The dashboard will simulate bunking every class on those dates, then estimate how and when your attendance recovers within the next ${FUTURE_WEEKS_TO_FETCH} weeks.`}
-            >
-              <div className="planner-panel-shell" style={{ display: "grid", gap: 18 }}>
-                <div
-                  className="planner-panel-toolbar"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ color: "#5f6f69", fontSize: 14, maxWidth: "72ch" }}>
-                    Pick dates on the left. The panel recalculates overall and subject-wise
-                    attendance after the last selected bunk day, then estimates recovery inside the
-                    loaded schedule horizon.
-                  </div>
-                  <button
-                    className="action-button action-button--secondary"
-                    type="button"
-                    onClick={() => setShowWholeDayPlanner(false)}
-                    style={secondaryButtonStyle}
-                  >
-                    Close planner
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                    gap: 20,
-                    alignItems: "start",
-                  }}
-                >
-              <div style={{ display: "grid", gap: 12 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gap: 6,
-                    padding: 14,
-                    borderRadius: 16,
-                    background: "#f8fafc",
-                    border: "1px solid rgba(15, 23, 42, 0.08)",
-                  }}
-                >
-                  <strong>Pick full days to bunk</strong>
-                  <span style={{ color: "#64748b", fontSize: 14 }}>
-                    Selected dates: {selectedBunkDates.size}
-                    {selectedBunkCutoffDateKey
-                      ? ` - simulated through ${formatDateKeyLabel(selectedBunkCutoffDateKey)}`
-                      : ""}
-                  </span>
-                </div>
-
-                {bunkableDays.length === 0 ? (
-                  <EmptyMessage message="No future class dates are loaded yet." />
-                ) : (
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 8,
-                      maxHeight: 620,
-                      overflowY: "auto",
-                      paddingRight: 4,
-                    }}
-                  >
-                    {bunkableDays.map((day) => {
-                      const isSelected = selectedBunkDates.has(day.dateKey);
-
-                      return (
-                        <label
-                          className="surface-card"
-                          key={day.dateKey}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "20px minmax(0, 1fr)",
-                            gap: 10,
-                            alignItems: "start",
-                            padding: 14,
-                            borderRadius: 16,
-                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                            background: isSelected ? "#dbeafe" : "#fff",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleWholeDayToggle(day.dateKey)}
-                            style={{ marginTop: 3 }}
-                          />
-                          <div style={{ display: "grid", gap: 4 }}>
-                            <div style={{ fontWeight: 700 }}>{day.label}</div>
-                            <div style={{ color: "#475569", fontSize: 14 }}>
-                              {day.entries.length} class{day.entries.length === 1 ? "" : "es"}
-                            </div>
-                            <div style={{ color: "#64748b", fontSize: 13 }}>
-                              {day.entries
-                                .slice(0, 3)
-                                .map((entry) => entry.courseCode ?? entry.title)
-                                .join(", ")}
-                              {day.entries.length > 3 ? "..." : ""}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: "grid", gap: 14 }}>
-                {selectedBunkDates.size === 0 || !overallWholeDayPlan ? (
-                  <EmptyMessage message="Select at least one future date to simulate a whole-day bunk plan." />
-                ) : (
-                  <>
-                    <div
-                      className="surface-card surface-card--highlight rise-in"
-                      style={{
-                        display: "grid",
-                        gap: 10,
-                        padding: 18,
-                        borderRadius: 18,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          alignItems: "baseline",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall after selected days</div>
-                          <div style={{ color: "#64748b", fontSize: 13 }}>
-                            This is your overall attendance after the last selected bunk date.
-                          </div>
-                        </div>
-                        <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
-                          <strong
-                            style={{
-                              color:
-                                overallWholeDayPlan.currentPercentage >= 75
-                                  ? "#166534"
-                                  : "#b91c1c",
-                            }}
-                          >
-                            Current: {overallWholeDayPlan.currentPercentage.toFixed(1)}%
-                          </strong>
-                          <span
-                            style={{
-                              color:
-                                overallWholeDayPlan.afterSelectedPercentage >= 75
-                                  ? "#166534"
-                                  : "#b91c1c",
-                              fontWeight: 700,
-                              fontSize: 13,
-                            }}
-                          >
-                            After selected days:{" "}
-                            {overallWholeDayPlan.afterSelectedPercentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <ProgressBar
-                        label="Current overall"
-                        percentage={overallWholeDayPlan.currentPercentage}
-                        healthy={overallWholeDayPlan.currentPercentage >= 75}
-                      />
-                      <ProgressBar
-                        label={`After selected days (${overallWholeDayPlan.selectedClassCount} missed)`}
-                        percentage={overallWholeDayPlan.afterSelectedPercentage}
-                        healthy={overallWholeDayPlan.afterSelectedPercentage >= 75}
-                      />
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                          gap: 10,
-                          color: "#334155",
-                          fontSize: 14,
-                        }}
-                      >
-                        <Metric
-                          label="After Selected"
-                          value={`${overallWholeDayPlan.afterSelectedPresent}/${overallWholeDayPlan.afterSelectedTotal}`}
-                        />
-                        <Metric
-                          label="Classes Missed"
-                          value={String(overallWholeDayPlan.selectedClassCount)}
-                        />
-                        <Metric
-                          label="Classes Attended"
-                          value={String(overallWholeDayPlan.attendedClassCount)}
-                        />
-                      </div>
-
-                      <RecoveryNote
-                        recovery={overallWholeDayPlan.recovery}
-                        cutoffDateKey={selectedBunkCutoffDateKey}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                        gap: 10,
-                      }}
-                    >
-                      {wholeDayPlanSummaries.map((subject) => (
-                        <div
-                          className="surface-card rise-in"
-                          key={`whole-day-${subject.id}`}
-                          style={{
-                            display: "grid",
-                            gap: 10,
-                            padding: 16,
-                            borderRadius: 18,
-                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                            background: "#fff",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              gap: 12,
-                              alignItems: "baseline",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                              <div style={{ color: "#64748b", fontSize: 13 }}>
-                                {subject.courseCode} - {subject.componentName}
-                              </div>
-                            </div>
-                            <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
-                              <strong
-                                style={{
-                                  color: subject.currentPercentage >= 75 ? "#166534" : "#b91c1c",
-                                }}
-                              >
-                                Current: {subject.currentPercentage.toFixed(1)}%
-                              </strong>
-                              <span
-                                style={{
-                                  color:
-                                    subject.afterSelectedPercentage >= 75 ? "#166534" : "#b91c1c",
-                                  fontWeight: 700,
-                                  fontSize: 13,
-                                }}
-                              >
-                                After selected days: {subject.afterSelectedPercentage.toFixed(1)}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <ProgressBar
-                            label="Current"
-                            percentage={subject.currentPercentage}
-                            healthy={subject.currentPercentage >= 75}
-                          />
-                          <ProgressBar
-                            label={`After selected days (${subject.selectedClassCount} missed)`}
-                            percentage={subject.afterSelectedPercentage}
-                            healthy={subject.afterSelectedPercentage >= 75}
-                          />
-
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                              gap: 10,
-                              color: "#334155",
-                              fontSize: 14,
-                            }}
-                          >
-                            <Metric
-                              label="After Selected"
-                              value={`${subject.afterSelectedPresent}/${subject.afterSelectedTotal}`}
-                            />
-                            <Metric
-                              label="Classes Missed"
-                              value={String(subject.selectedClassCount)}
-                            />
-                            <Metric
-                              label="Classes Attended"
-                              value={String(subject.attendedClassCount)}
-                            />
-                          </div>
-
-                          <RecoveryNote
-                            recovery={subject.recovery}
-                            cutoffDateKey={selectedBunkCutoffDateKey}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          </Panel>
-        </section>
-        )}
-        <section style={{ display: "grid", gap: 20 }}>
-          <Panel
-            title="Attendance Overview"
-            subtitle="Keep the attendance view wide and readable. Open the whole-day planner from here only when you want to simulate bigger bunk plans."
-            headerAction={
-              <button
-                className="action-button action-button--primary"
-                type="button"
-                onClick={() => setShowWholeDayPlanner((previous) => !previous)}
-                style={{
-                  ...primaryButtonStyle(false),
-                  padding: "8px 16px",
-                  fontSize: "14px",
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {showWholeDayPlanner ? "Close Planner" : "Open Whole Day Planner"}
-              </button>
-            }
-          >
-              {subjectSummaries.length === 0 ? (
-                <EmptyMessage message="Sync the dashboard after connecting your KIET session to load attendance data." />
-              ) : (
-                <div style={{ display: "grid", gap: 16 }}>
-                  <div
-                    className="overview-lead-grid"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                      gap: 14,
-                      alignItems: "start",
-                    }}
-                  >
-                  {overallSummary && (
-                    <div
-                      className="surface-card surface-card--highlight rise-in"
-                      style={{
-                        display: "grid",
-                        gap: 10,
-                        padding: 18,
-                        borderRadius: 24,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          alignItems: "baseline",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 160 }}>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall Attendance</div>
-                          <div style={{ color: "#64748b", fontSize: 13 }}>
-                            Combined across all attendance components
-                          </div>
-                        </div>
-                        <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
-                          <strong
-                            style={{
-                              color: overallSummary.percentage >= 75 ? "#166534" : "#b91c1c",
-                            }}
-                          >
-                            Current: {overallSummary.percentage.toFixed(1)}%
-                          </strong>
-                          <span
-                            style={{
-                              color:
-                                overallSummary.projectedPercentage >= 75 ? "#166534" : "#b91c1c",
-                              fontSize: 13,
-                              fontWeight: 700,
-                            }}
-                          >
-                            If attended all remaining: {overallSummary.projectedPercentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <ProgressBar
-                        label="Current overall"
-                        percentage={overallSummary.percentage}
-                        healthy={overallSummary.percentage >= 75}
-                      />
-                      <ProgressBar
-                        label={`If attended all remaining (${overallSummary.upcomingCount} upcoming)`}
-                        percentage={overallSummary.projectedPercentage}
-                        healthy={overallSummary.projectedPercentage >= 75}
-                      />
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                          gap: 10,
-                          color: "#334155",
-                          fontSize: 14,
-                        }}
-                      >
-                        <Metric label="Present" value={String(overallSummary.present)} />
-                        <Metric label="Total" value={String(overallSummary.total)} />
-                        <Metric
-                          label="Projected"
-                          value={`${overallSummary.projectedPresent}/${overallSummary.projectedTotal}`}
-                        />
-                        <Metric label="Planned" value={String(overallSummary.plannedBunkCount)} />
-                        <Metric label="Upcoming" value={String(overallSummary.upcomingCount)} />
-                        <Metric
-                          label="🔥 STREAK"
-                          value={formatStreakMetricValue(streakResult, streakLoading)}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-
-                </div>
-
-                <div
-                  className="overview-subject-grid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-                    gap: 14,
-                    alignItems: "start",
-                  }}
-                >
-
-                  {subjectSummaries.map((subject) => (
-                    <div
-                      className="surface-card rise-in"
-                      key={subject.id}
-                      style={{
-                        display: "grid",
-                        gap: 10,
-                        padding: 16,
-                        borderRadius: 22,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 250, 252, 0.92) 100%)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          alignItems: "baseline",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 120 }}>
-                          <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                          <div style={{ color: "#64748b", fontSize: 13 }}>
-                            {subject.courseCode} - {subject.componentName}
-                          </div>
-                        </div>
-                        <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
-                          <strong
-                            style={{ color: subject.percentage >= 75 ? "#166534" : "#b91c1c" }}
-                          >
-                            Current: {subject.percentage.toFixed(1)}%
-                          </strong>
-                          <span
-                            style={{
-                              color: subject.projectedPercentage >= 75 ? "#166534" : "#b91c1c",
-                              fontSize: 13,
-                              fontWeight: 700,
-                            }}
-                          >
-                            If attended all remaining: {subject.projectedPercentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <ProgressBar
-                        label="Current"
-                        percentage={subject.percentage}
-                        healthy={subject.percentage >= 75}
-                      />
-                      <ProgressBar
-                        label={`If attended all remaining (${subject.upcomingCount} upcoming)`}
-                        percentage={subject.projectedPercentage}
-                        healthy={subject.projectedPercentage >= 75}
-                      />
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                          gap: 10,
-                          color: "#334155",
-                          fontSize: 14,
-                        }}
-                      >
-                        <Metric label="Present" value={String(subject.present)} />
-                        <Metric label="Extra Attendance" value={String(subject.extraAttendance)} />
-                        <Metric label="Total Classes" value={String(subject.total)} />
-                        <Metric label="Upcoming Classes" value={String(subject.upcomingCount)} />
-                        <Metric label="Planned Bunks" value={String(subject.plannedBunkCount)} />
-                        <Metric
-                          label="Projected Present"
-                          value={`${subject.projectedPresent}/${subject.projectedTotal}`}
-                        />
-                        <Metric label="Safe Bunks" value={String(subject.safeBunks)} />
-                        <Metric label="Recovery Needed" value={String(subject.classesNeeded)} />
-                      </div>
-
-                      {subject.upcomingCount > 0 && (
-                        <div style={{ display: "grid", gap: 10 }}>
-                          <button
-                            className="action-button action-button--secondary"
-                            type="button"
-                            onClick={() => handlePlannerToggle(subject.id)}
-                            style={secondaryButtonStyle}
-                          >
-                            {expandedPlanners.has(subject.id) ? "Hide bunk planner" : "Plan bunk"}
-                          </button>
-
-                          {expandedPlanners.has(subject.id) && (
-                            <div
-                              className="surface-card surface-card--muted"
-                              style={{
-                                display: "grid",
-                                gap: 10,
-                                padding: 14,
-                                borderRadius: 16,
-                                border: "1px dashed rgba(15, 23, 42, 0.2)",
-                                background: "#f8fafc",
-                              }}
-                            >
-                              <div style={{ color: "#475569", fontSize: 14 }}>
-                                We have {subject.upcomingCount} upcoming class
-                                {subject.upcomingCount === 1 ? "" : "es"} this week. Select the
-                                ones you plan to bunk.
-                              </div>
-
-                              <div
-                                style={{
-                                  display: "grid",
-                                  gap: 10,
-                                  padding: 12,
-                                  borderRadius: 14,
-                                  border: "1px solid rgba(15, 23, 42, 0.08)",
-                                  background: "#fff",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    gap: 12,
-                                    alignItems: "baseline",
-                                  }}
-                                >
-                                  <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                                    Attendance after selected bunks
-                                  </div>
-                                  <div
-                                    style={{
-                                      color:
-                                        subject.bunkAdjustedPercentage >= 75
-                                          ? "#166534"
-                                          : "#b91c1c",
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    {subject.bunkAdjustedPercentage.toFixed(1)}%
-                                  </div>
-                                </div>
-
-                                <ProgressBar
-                                  label={`After bunk (${subject.plannedBunkCount} selected)`}
-                                  percentage={subject.bunkAdjustedPercentage}
-                                  healthy={subject.bunkAdjustedPercentage >= 75}
-                                />
-
-                                <div
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                                    gap: 10,
-                                    color: "#334155",
-                                    fontSize: 14,
-                                  }}
-                                >
-                                  <Metric
-                                    label="Current"
-                                    value={`${subject.percentage.toFixed(1)}%`}
-                                  />
-                                  <Metric
-                                    label="After Bunk"
-                                    value={`${subject.bunkAdjustedPercentage.toFixed(1)}%`}
-                                  />
-                                  <Metric
-                                    label="Change"
-                                    value={formatPercentageDelta(subject.bunkImpact)}
-                                  />
-                                  <Metric
-                                    label="Selected Bunks"
-                                    value={String(subject.plannedBunkCount)}
-                                  />
-                                </div>
-                              </div>
-
-                              <div style={{ display: "grid", gap: 8 }}>
-                                {subject.matchingUpcomingClasses.map((entry) => {
-                                  const entryKey = getScheduleEntryKey(entry);
-                                  const isChecked = plannedBunks.has(entryKey);
-
-                                  return (
-                                    <label
-                                      className="surface-card"
-                                      key={entryKey}
-                                      style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "20px minmax(0, 1fr)",
-                                        gap: 10,
-                                        alignItems: "start",
-                                        padding: 12,
-                                        borderRadius: 14,
-                                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                                        background: isChecked ? "#fee2e2" : "#fff",
-                                      }}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={() => handleBunkToggle(entry)}
-                                        style={{ marginTop: 3 }}
-                                      />
-                                      <div style={{ display: "grid", gap: 4 }}>
-                                        <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                                          {formatScheduleDay(entry.start)}
-                                        </div>
-                                        <div style={{ color: "#475569", fontSize: 14 }}>
-                                          {formatScheduleTime(entry.start)} -{" "}
-                                          {formatScheduleTime(entry.end)}
-                                        </div>
-                                        <div style={{ color: "#64748b", fontSize: 13 }}>
-                                          {entry.courseName ?? subject.title}
-                                          {entry.classRoom ? ` - ${entry.classRoom}` : ""}
-                                        </div>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div style={{ display: "grid", gap: 10 }}>
-                        <button
-                          className="action-button action-button--secondary"
-                          type="button"
-                          onClick={() => handleDatewiseToggle(subject)}
-                          style={secondaryButtonStyle}
-                        >
-                          {expandedDatewise.has(subject.id)
-                            ? "Hide date-wise attendance"
-                            : "View date-wise attendance"}
-                        </button>
-
-                        {expandedDatewise.has(subject.id) && (
-                          <div
-                            className="surface-card surface-card--muted"
-                            style={{
-                              display: "grid",
-                              gap: 12,
-                              padding: 14,
-                              borderRadius: 16,
-                              border: "1px dashed rgba(15, 23, 42, 0.2)",
-                              background: "#f8fafc",
-                            }}
-                          >
-                            <div style={{ color: "#475569", fontSize: 14 }}>
-                              This is the official date-wise attendance mark for this subject and
-                              component.
-                            </div>
-
-                            {datewiseLoading.has(subject.id) ? (
-                              <div
-                                style={{
-                                  padding: 12,
-                                  borderRadius: 14,
-                                  background: "#fff",
-                                  color: "#475569",
-                                  border: "1px solid rgba(15, 23, 42, 0.08)",
-                                }}
-                              >
-                                Loading date-wise attendance...
-                              </div>
-                            ) : datewiseErrors[subject.id] ? (
-                              <Notice tone="#991b1b" background="#fee2e2">
-                                {datewiseErrors[subject.id]}
-                              </Notice>
-                            ) : datewiseAttendance[subject.id] ? (
-                              <>
-                                <div
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                                    gap: 10,
-                                    padding: 12,
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(15, 23, 42, 0.08)",
-                                    background: "#fff",
-                                  }}
-                                >
-                                  <Metric
-                                    label="Marked Present"
-                                    value={String(datewiseAttendance[subject.id].presentCount)}
-                                  />
-                                  <Metric
-                                    label="Total Lectures"
-                                    value={String(datewiseAttendance[subject.id].lectureCount)}
-                                  />
-                                  <Metric
-                                    label="Extra Attendance"
-                                    value={String(datewiseAttendance[subject.id].extraAttendance)}
-                                  />
-                                  <Metric
-                                    label="Effective %"
-                                    value={`${datewiseAttendance[subject.id].percent?.toFixed(1) ?? "0.0"}%`}
-                                  />
-                                </div>
-
-                                <div
-                                  style={{
-                                    display: "grid",
-                                    gap: 8,
-                                    maxHeight: 360,
-                                    overflowY: "auto",
-                                    paddingRight: 4,
-                                  }}
-                                >
-                                  {datewiseAttendance[subject.id].lectures.map((lecture, index) => {
-                                    const statusTheme = getAttendanceStatusTheme(lecture.attendance);
-
-                                    return (
-                                      <div
-                                        className="surface-card"
-                                        key={`${lecture.planLecDate ?? "unknown"}-${lecture.timeSlot ?? index}-${lecture.attendance ?? "na"}`}
-                                        style={{
-                                          display: "grid",
-                                          gap: 8,
-                                          padding: 12,
-                                          borderRadius: 14,
-                                          border: "1px solid rgba(15, 23, 42, 0.08)",
-                                          background: "#fff",
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            gap: 12,
-                                            alignItems: "start",
-                                            flexWrap: "wrap",
-                                          }}
-                                        >
-                                          <div style={{ display: "grid", gap: 4 }}>
-                                            <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                                              {formatDatewiseLectureDate(
-                                                lecture.planLecDate,
-                                                lecture.dayName,
-                                              )}
-                                            </div>
-                                            <div style={{ color: "#475569", fontSize: 14 }}>
-                                              {lecture.timeSlot ?? "Time not available"}
-                                            </div>
-                                            <div style={{ color: "#64748b", fontSize: 13 }}>
-                                              {lecture.lectureType ?? "Lecture type unavailable"}
-                                            </div>
-                                          </div>
-
-                                          <span
-                                            style={{
-                                              padding: "6px 10px",
-                                              borderRadius: 999,
-                                              background: statusTheme.background,
-                                              color: statusTheme.color,
-                                              fontWeight: 700,
-                                              fontSize: 12,
-                                            }}
-                                          >
-                                            {lecture.attendance ?? "NOT MARKED"}
-                                          </span>
-                                        </div>
-
-                                        {lecture.attendanceAdjustmentDetails && (
-                                          <div
-                                            style={{
-                                              padding: "10px 12px",
-                                              borderRadius: 12,
-                                              background: "#f8fafc",
-                                              color: "#475569",
-                                              fontSize: 13,
-                                            }}
-                                          >
-                                            {lecture.attendanceAdjustmentDetails}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </>
-                            ) : (
-                              <EmptyMessage message="Open this once to load the official date-wise attendance from KIET." />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Panel>
-        </section>
-
-        <section style={{ display: "grid", gap: 14 }}>
-          <AttendanceSniper data={overallSummary} schedule={bunkableDays} />
-        </section>
-
-        <section style={{ display: "grid", gap: 14 }}>
-          <RedemptionArc data={overallSummary} schedule={bunkableDays} />
-        </section>
-
-        <section style={{ display: "grid", gap: 14 }}>
-          <Panel
-            title="Upcoming Classes This Week"
-            subtitle="Reference-only view of the current KIET week. It stays down here so the planning tools keep the main focus."
-          >
-            {upcomingClasses.length === 0 ? (
-              <EmptyMessage message="No future classes were found from the weekly schedule endpoint yet." />
-            ) : (
-              <div
-                className="schedule-reference-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                  gap: 12,
-                }}
-              >
-                {upcomingClasses.slice(0, 18).map((entry) => (
-                  <div
-                    className="surface-card schedule-reference-card"
-                    key={`${entry.courseCode ?? "holiday"}-${entry.start}-${entry.end}`}
-                    style={{
-                      display: "grid",
-                      gap: 8,
-                      padding: 14,
-                      borderRadius: 18,
-                      border: "1px solid rgba(15, 23, 42, 0.08)",
-                      background: "#fff",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        alignItems: "start",
-                      }}
-                    >
-                      <div style={{ display: "grid", gap: 4 }}>
-                        <strong>{entry.courseName ?? entry.title}</strong>
-                        <div style={{ color: "#475569", fontSize: 14 }}>
-                          {(entry.courseCode ?? "NA") + " - " + (entry.courseCompName ?? "CLASS")}
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: 999,
-                          background: "rgba(29, 78, 216, 0.08)",
-                          color: "#1d4ed8",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {formatScheduleDay(entry.start)}
-                      </span>
-                    </div>
-
-                    <div style={{ color: "#64748b", fontSize: 13 }}>
-                      {formatScheduleTime(entry.start)} - {formatScheduleTime(entry.end)}
-                      {entry.classRoom ? ` - ${entry.classRoom}` : ""}
-                    </div>
-                    <div style={{ color: "#64748b", fontSize: 13 }}>
-                      {entry.facultyName ? `Faculty: ${entry.facultyName}` : "Faculty not listed"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-        </section>
-          </>
-        )}
       </div>
     </main>
   );
 }
 
-function SetupCard({ hasData }: { hasData: boolean }) {
+export function SetupCard({ hasData }: { hasData: boolean }) {
   return (
     <section className="premium-panel rise-in" style={{ padding: "28px", borderRadius: 28, background: "#ffffff", border: "1px solid rgba(15, 23, 42, 0.08)", boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)", display: "grid", gap: 24 }}>
       {!hasData && (
@@ -1768,7 +790,7 @@ function SetupCard({ hasData }: { hasData: boolean }) {
   );
 }
 
-function StatusCard({ title, value, tone }: { title: string; value: string; tone: string }) {
+export function StatusCard({ title, value, tone }: { title: string; value: string; tone: string }) {
   return (
     <div
       className="status-card rise-in"
@@ -1789,7 +811,7 @@ function StatusCard({ title, value, tone }: { title: string; value: string; tone
   );
 }
 
-function ProgressBar({
+export function ProgressBar({
   label,
   percentage,
   healthy,
@@ -1837,7 +859,7 @@ function ProgressBar({
   );
 }
 
-function RecoveryNote({
+export function RecoveryNote({
   recovery,
   cutoffDateKey,
 }: {
@@ -1907,7 +929,7 @@ function RecoveryNote({
   );
 }
 
-function Panel({
+export function Panel({
   title,
   subtitle,
   children,
@@ -1945,7 +967,7 @@ function Panel({
   );
 }
 
-function Notice({
+export function Notice({
   tone,
   background,
   children,
@@ -1970,7 +992,7 @@ function Notice({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+export function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric-chip">
       <div className="metric-label" style={{ fontSize: 12, color: "#64748b" }}>
@@ -1983,7 +1005,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function EmptyMessage({ message }: { message: string }) {
+export function EmptyMessage({ message }: { message: string }) {
   return (
     <div
       className="empty-state"
@@ -2000,7 +1022,7 @@ function EmptyMessage({ message }: { message: string }) {
   );
 }
 
-function primaryButtonStyle(disabled: boolean): CSSProperties {
+export function primaryButtonStyle(disabled: boolean): CSSProperties {
   return {
     border: "none",
     borderRadius: 999,
@@ -2015,7 +1037,7 @@ function primaryButtonStyle(disabled: boolean): CSSProperties {
   };
 }
 
-const secondaryButtonStyle: CSSProperties = {
+export const secondaryButtonStyle: CSSProperties = {
   border: "1px solid rgba(15, 23, 42, 0.12)",
   borderRadius: 999,
   padding: "12px 20px",
@@ -2026,7 +1048,7 @@ const secondaryButtonStyle: CSSProperties = {
   boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
 };
 
-function AttendanceSniper({ data, schedule }: { data: OverallSummary | null; schedule: BunkableDay[] }) {
+export function AttendanceSniper({ data, schedule }: { data: OverallSummary | null; schedule: BunkableDay[] }) {
   const [targetInput, setTargetInput] = useState<string>("");
   const [result, setResult] = useState<{
     target: number;
@@ -2215,12 +1237,12 @@ function incrementCount(counter: Map<string, number>, key: string) {
   counter.set(key, (counter.get(key) ?? 0) + 1);
 }
 
-function formatPercentageDelta(value: number): string {
+export function formatPercentageDelta(value: number): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)} pts`;
 }
 
-function formatStreakMetricValue(result: StreakResult | null, isLoading: boolean): string {
+export function formatStreakMetricValue(result: StreakResult | null, isLoading: boolean): string {
   if (isLoading || !result) {
     return "Loading...";
   }
@@ -2341,7 +1363,7 @@ function getTimeSlotSortValue(timeSlot: string | null): number {
   return hours * 60 + minutes;
 }
 
-function formatDatewiseLectureDate(planLecDate: string | null, dayName: string | null): string {
+export function formatDatewiseLectureDate(planLecDate: string | null, dayName: string | null): string {
   if (!planLecDate) {
     return dayName ?? "Date unavailable";
   }
@@ -2356,7 +1378,7 @@ function formatDatewiseLectureDate(planLecDate: string | null, dayName: string |
   }).format(new Date(year, month - 1, day));
 }
 
-function getAttendanceStatusTheme(status: string | null): { background: string; color: string } {
+export function getAttendanceStatusTheme(status: string | null): { background: string; color: string } {
   switch (normalizeIdentifier(status)) {
     case "PRESENT":
       return {
@@ -2381,7 +1403,7 @@ function getAttendanceStatusTheme(status: string | null): { background: string; 
   }
 }
 
-function getScheduleEntryKey(entry: ScheduleEntry): string {
+export function getScheduleEntryKey(entry: ScheduleEntry): string {
   return [
     normalizeIdentifier(entry.courseCode),
     normalizeIdentifier(entry.courseCompName),
