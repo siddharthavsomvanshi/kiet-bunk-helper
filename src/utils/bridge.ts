@@ -6,7 +6,7 @@ import type {
   ExtensionBridgeResponse,
 } from "../types/bridge";
 
-const BRIDGE_TIMEOUT_MS = 12_000;
+const BRIDGE_TIMEOUT_MS = 45_000;
 
 export async function callExtension<T extends BridgeRequestType>(
   type: T,

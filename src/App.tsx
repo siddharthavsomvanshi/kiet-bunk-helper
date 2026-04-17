@@ -425,15 +425,17 @@ function App() {
       }
 
       const now = new Date();
-      const weekRequests = Array.from({ length: FUTURE_WEEKS_TO_FETCH }, (_, weekOffset) =>
-        callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset)),
-      );
-
-      const [attendanceData, fetchedStudentInfo, fetchedWeekSchedules] = await Promise.all([
+      const [attendanceData, fetchedStudentInfo] = await Promise.all([
         callExtension("FETCH_ATTENDANCE", {}),
         callExtension("FETCH_STUDENT_ID", {}),
-        Promise.all(weekRequests),
       ]);
+
+      const fetchedWeekSchedules = [];
+      for (let weekOffset = 0; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
+        fetchedWeekSchedules.push(
+          await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
+        );
+      }
 
       const currentWeekSchedule = fetchedWeekSchedules[0] ?? [];
       const allFutureClasses = getUpcomingClasses(fetchedWeekSchedules.flat());
