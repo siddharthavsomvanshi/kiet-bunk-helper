@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DatewiseAttendanceBucket,
   DatewiseAttendanceLecture,
@@ -29,6 +29,7 @@ import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
+const STREAK_FETCH_START_DELAY_MS = 2_500;
 
 export type SubjectSummary = {
   id: string;
@@ -130,7 +131,42 @@ function App() {
   const [selectedBunkDates, setSelectedBunkDates] = useState<Set<string>>(new Set());
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null);
   const [streakLoading, setStreakLoading] = useState(false);
+  const [scheduleSyncComplete, setScheduleSyncComplete] = useState(false);
   const [error, setError] = useState("");
+  const syncRequestIdRef = useRef(0);
+
+  function beginSyncRequest() {
+    syncRequestIdRef.current += 1;
+    return syncRequestIdRef.current;
+  }
+
+  function invalidateSyncRequests() {
+    syncRequestIdRef.current += 1;
+  }
+
+  function isCurrentSyncRequest(syncRequestId: number) {
+    return syncRequestIdRef.current === syncRequestId;
+  }
+
+  function applyScheduleState(currentWeekSchedule: ScheduleEntry[], allWeekSchedules: ScheduleEntry[]) {
+    const currentUpcomingClasses = getUpcomingClasses(currentWeekSchedule);
+    const allFutureClasses = getUpcomingClasses(allWeekSchedules);
+    const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
+
+    setUpcomingClasses(currentUpcomingClasses);
+    setFutureClasses(allFutureClasses);
+    setSelectedBunkDates((previous) => {
+      const next = new Set<string>();
+
+      for (const dateKey of previous) {
+        if (availableBunkDates.has(dateKey)) {
+          next.add(dateKey);
+        }
+      }
+
+      return next;
+    });
+  }
 
   const studentContext = useMemo(
     () => studentContextOverride ?? getStudentContext(attendance),
@@ -368,48 +404,64 @@ function App() {
       return;
     }
 
+    if (!scheduleSyncComplete) {
+      setStreakResult(null);
+      setStreakLoading(false);
+      return;
+    }
+
     let isCancelled = false;
     setStreakLoading(true);
+    const timerId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const fetchResult = await fetchGlobalDatewiseAttendance(
+            studentContext.studentId,
+            studentContext.sessionId,
+            streakSubjects,
+          );
+          const nextResult = calculateStrictStreak(fetchResult);
 
-    void (async () => {
-      try {
-        const fetchResult = await fetchGlobalDatewiseAttendance(
-          studentContext.studentId,
-          studentContext.sessionId,
-          streakSubjects,
-        );
-        const nextResult = calculateStrictStreak(fetchResult);
-
-        if (!isCancelled) {
-          setStreakResult(nextResult);
+          if (!isCancelled) {
+            setStreakResult(nextResult);
+          }
+        } catch {
+          if (!isCancelled) {
+            setStreakResult({
+              streak: null,
+              isReliable: false,
+              lastUpdated: Date.now(),
+            });
+          }
+        } finally {
+          if (!isCancelled) {
+            setStreakLoading(false);
+          }
         }
-      } catch {
-        if (!isCancelled) {
-          setStreakResult({
-            streak: null,
-            isReliable: false,
-            lastUpdated: Date.now(),
-          });
-        }
-      } finally {
-        if (!isCancelled) {
-          setStreakLoading(false);
-        }
-      }
-    })();
+      })();
+    }, STREAK_FETCH_START_DELAY_MS);
 
     return () => {
       isCancelled = true;
+      window.clearTimeout(timerId);
     };
-  }, [attendance, studentContext, streakSubjects]);
+  }, [attendance, studentContext, streakSubjects, scheduleSyncComplete]);
 
   const syncDashboard = useCallback(async () => {
+    const syncRequestId = beginSyncRequest();
     setLoadState("loading");
+    setScheduleSyncComplete(false);
     setError("");
-    setStreakLoading(true);
+    setStreakResult(null);
+    setStreakLoading(false);
 
     try {
       const sessionStatus = await callExtension("GET_SESSION_STATUS", {});
+
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
+      }
+
       setSessionCapturedAt(sessionStatus.capturedAt);
 
       if (!sessionStatus.hasToken) {
@@ -424,52 +476,116 @@ function App() {
         setShowWholeDayPlanner(false);
         setStreakResult(null);
         setStreakLoading(false);
+        setScheduleSyncComplete(false);
         setLoadState("idle");
         return;
       }
 
       const now = new Date();
-      const [attendanceData, fetchedStudentInfo] = await Promise.all([
-        callExtension("FETCH_ATTENDANCE", {}),
-        callExtension("FETCH_STUDENT_ID", {}),
-      ]);
-
-      const fetchedWeekSchedules = [];
-      for (let weekOffset = 0; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
-        fetchedWeekSchedules.push(
-          await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
-        );
-      }
-
-      const currentWeekSchedule = fetchedWeekSchedules[0] ?? [];
-      const allFutureClasses = getUpcomingClasses(fetchedWeekSchedules.flat());
-      const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
-
-      setAttendance(attendanceData);
-      setStudentContextOverride(
-        fetchedStudentInfo.studentId === null
-          ? null
-          : {
-              studentId: fetchedStudentInfo.studentId,
-              sessionId: fetchedStudentInfo.sessionId,
-            },
+      const weekRanges = Array.from({ length: FUTURE_WEEKS_TO_FETCH }, (_, weekOffset) =>
+        getWeekRange(now, weekOffset),
       );
-      setUpcomingClasses(getUpcomingClasses(currentWeekSchedule));
-      setFutureClasses(allFutureClasses);
-      setSelectedBunkDates((previous) => {
-        const next = new Set<string>();
+      const attendancePromise = callExtension("FETCH_ATTENDANCE", {});
+      const studentInfoPromise = callExtension("FETCH_STUDENT_ID", {})
+        .then((value) => ({ ok: true as const, value }))
+        .catch((error) => ({ ok: false as const, error }));
+      const loadedWeekSchedules: ScheduleEntry[][] = Array.from(
+        { length: weekRanges.length },
+        () => [],
+      );
+      let currentWeekResolved = false;
 
-        for (const dateKey of previous) {
-          if (availableBunkDates.has(dateKey)) {
-            next.add(dateKey);
-          }
+      const publishLoadedSchedules = () => {
+        if (!currentWeekResolved || !isCurrentSyncRequest(syncRequestId)) {
+          return;
         }
 
-        return next;
+        applyScheduleState(loadedWeekSchedules[0] ?? [], loadedWeekSchedules.flat());
+      };
+
+      const scheduleRequests = weekRanges.map((weekRange, weekIndex) =>
+        callExtension("FETCH_SCHEDULE", weekRange)
+          .then((weekSchedule) => {
+            if (!isCurrentSyncRequest(syncRequestId)) {
+              return;
+            }
+
+            loadedWeekSchedules[weekIndex] = weekSchedule;
+
+            if (weekIndex === 0) {
+              currentWeekResolved = true;
+            }
+
+            publishLoadedSchedules();
+          })
+          .catch(() => {
+            if (!isCurrentSyncRequest(syncRequestId)) {
+              return;
+            }
+
+            loadedWeekSchedules[weekIndex] = [];
+
+            if (weekIndex === 0) {
+              currentWeekResolved = true;
+            }
+
+            publishLoadedSchedules();
+          }),
+      );
+
+      void Promise.allSettled(scheduleRequests).then(() => {
+        if (!isCurrentSyncRequest(syncRequestId)) {
+          return;
+        }
+
+        setScheduleSyncComplete(true);
       });
+      const attendanceData = await attendancePromise;
+
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
+      }
+
+      setAttendance(attendanceData);
+      setStudentContextOverride(null);
+      setUpcomingClasses([]);
+      setFutureClasses([]);
       setLoadState("ready");
+
+      void (async () => {
+        const fetchedStudentInfoResult = await studentInfoPromise;
+
+        if (!isCurrentSyncRequest(syncRequestId)) {
+          return;
+        }
+
+        if (!fetchedStudentInfoResult.ok) {
+          if (!isCurrentSyncRequest(syncRequestId)) {
+            return;
+          }
+
+          setStudentContextOverride(null);
+          return;
+        }
+
+        const fetchedStudentInfo = fetchedStudentInfoResult.value;
+        setStudentContextOverride(
+          fetchedStudentInfo.studentId === null
+            ? null
+            : {
+                studentId: fetchedStudentInfo.studentId,
+                sessionId: fetchedStudentInfo.sessionId,
+              },
+        );
+      })();
     } catch (caughtError) {
+      if (!isCurrentSyncRequest(syncRequestId)) {
+        return;
+      }
+
+      invalidateSyncRequests();
       setLoadState("error");
+      setScheduleSyncComplete(false);
       setAttendance(null);
       setStudentContextOverride(null);
       setUpcomingClasses([]);
@@ -536,6 +652,7 @@ function App() {
 
   async function handleClearSession() {
     try {
+      invalidateSyncRequests();
       await callExtension("CLEAR_SESSION", {});
       setAttendance(null);
       setUpcomingClasses([]);
@@ -552,6 +669,7 @@ function App() {
       setSessionCapturedAt(null);
       setStreakResult(null);
       setStreakLoading(false);
+      setScheduleSyncComplete(false);
       setLoadState("idle");
       window.location.href = "https://kiet.cybervidya.net/?action=logout";
     } catch (caughtError) {
