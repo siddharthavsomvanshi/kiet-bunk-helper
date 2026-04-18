@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DatewiseAttendanceBucket,
   DatewiseAttendanceLecture,
@@ -15,21 +15,21 @@ import {
   getWeekRange,
   parseKietDateTime,
 } from "./utils/date";
-import {
-  calculateStrictStreak,
-  fetchGlobalDatewiseAttendance,
-} from "./utils/streak";
 import type { StreakResult, StreakSubjectConfig } from "./utils/streak";
 
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { Strategy } from "./pages/Strategy";
 import { CalendarPage } from "./pages/Calendar";
+import { Feedback } from "./pages/Feedback";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
 const STREAK_FETCH_START_DELAY_MS = 2_500;
+const LazyTodayStatus = lazy(() =>
+  import("./pages/TodayStatusPage").then((module) => ({ default: module.TodayStatusPage })),
+);
 
 export type SubjectSummary = {
   id: string;
@@ -413,34 +413,14 @@ function App() {
     let isCancelled = false;
     setStreakLoading(true);
     const timerId = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const fetchResult = await fetchGlobalDatewiseAttendance(
-            studentContext.studentId,
-            studentContext.sessionId,
-            streakSubjects,
-          );
-          const nextResult = calculateStrictStreak(fetchResult);
-
-          if (!isCancelled) {
-            setStreakResult(nextResult);
-          }
-        } catch {
-          if (!isCancelled) {
-            setStreakResult({
-              streak: null,
-              isReliable: false,
-              lastUpdated: Date.now(),
-            });
-          }
-        } finally {
-          if (!isCancelled) {
-            setStreakLoading(false);
-          }
-        }
-      })();
+      // 🔒 PAUSED: Streak feature disabled to reduce server load
+      setStreakResult({
+        streak: null,
+        isReliable: false,
+        lastUpdated: Date.now(),
+      });
+      setStreakLoading(false);
     }, STREAK_FETCH_START_DELAY_MS);
-
     return () => {
       isCancelled = true;
       window.clearTimeout(timerId);
@@ -840,17 +820,45 @@ function App() {
           borderRadius: "20px",
           background: "#ffffff",
           border: "1px solid rgba(15, 23, 42, 0.08)",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)"
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+          flexWrap: "wrap"
         }}>
           <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Dashboard</Link>
+          <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Today Status</Link>
           <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Strategy</Link>
           <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Calendar</Link>
+          <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Snitch</Link>
         </nav>
 
         <Routes>
           <Route path="/" element={<Dashboard data={dashboardData} handlers={dashboardHandlers} />} />
+          <Route
+            path="/today"
+            element={
+              <Suspense
+                fallback={
+                  <section style={{ display: "grid", gap: 14 }}>
+                    <Panel
+                      title="Today Status"
+                      subtitle="Loading today's attendance view on demand."
+                    >
+                      <EmptyMessage message="Preparing today's classes..." />
+                    </Panel>
+                  </section>
+                }
+              >
+                <LazyTodayStatus
+                  attendance={attendance}
+                  studentContext={studentContext}
+                  extensionDetected={extensionDetected}
+                  loadState={loadState}
+                />
+              </Suspense>
+            }
+          />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+          <Route path="/feedback" element={<Feedback />} />
         </Routes>
 
       </div>
@@ -1361,19 +1369,9 @@ export function formatPercentageDelta(value: number): string {
 }
 
 export function formatStreakMetricValue(result: StreakResult | null, isLoading: boolean): string {
-  if (isLoading || !result) {
-    return "Loading...";
-  }
-
-  if (!result.isReliable || result.streak === null) {
-    return "Data syncing…";
-  }
-
-  if (result.streak === 0) {
-    return "0 days 😭";
-  }
-
-  return `${result.streak} day${result.streak === 1 ? "" : "s"} in a row 🚀`;
+  void result;
+  void isLoading;
+  return "\u26A0\uFE0F Streak feature temporarily unavailable due to high server load. Please try again later.";
 }
 
 function getStudentContext(attendance: StudentDetails | null): StudentContext | null {
