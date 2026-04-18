@@ -26,6 +26,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { Strategy } from "./pages/Strategy";
 import { CalendarPage } from "./pages/Calendar";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
+import { Analytics } from "@vercel/analytics/react";
 
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
@@ -736,6 +737,7 @@ function App() {
         </Routes>
 
       </div>
+      <Analytics />
     </main>
   );
 }
