@@ -1,12 +1,11 @@
 import React from "react";
 import {
-  Panel,
-  EmptyMessage,
   ProgressBar,
   Metric,
   RecoveryNote,
   secondaryButtonStyle,
 } from "../App";
+import { Panel, EmptyMessage } from "../components/UI";
 import { RedemptionArc } from "../components/Attendance/RedemptionArc";
 import type {
   OverallSummary,

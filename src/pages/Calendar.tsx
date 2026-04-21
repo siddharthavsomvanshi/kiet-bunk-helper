@@ -1,5 +1,5 @@
 import React from "react";
-import { Panel, EmptyMessage } from "../App";
+import { Panel, EmptyMessage } from "../components/UI";
 import type { ScheduleEntry } from "../types/kiet";
 import { formatScheduleDay, formatScheduleTime } from "../utils/date";
 

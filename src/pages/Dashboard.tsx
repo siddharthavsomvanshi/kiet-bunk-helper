@@ -2,11 +2,11 @@ import React from "react";
 import {
   SetupCard,
   StatusCard,
-  Panel,
   ProgressBar,
   Metric,
+} from "../App";
+import {
   Notice,
-  EmptyMessage,
   primaryButtonStyle,
   secondaryButtonStyle,
   AttendanceSniper,
@@ -16,6 +16,7 @@ import {
   getAttendanceStatusTheme,
   getScheduleEntryKey,
 } from "../App";
+import { Panel, EmptyMessage } from "../components/UI";
 import type {
   LoadState,
   SubjectSummary,

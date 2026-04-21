@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Panel } from '../App';
+import { Panel } from '../components/UI';
 
 interface ExamResource {
   id: string;

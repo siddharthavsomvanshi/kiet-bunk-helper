@@ -1,6 +1,6 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
-import { Panel } from "../App";
+import { Panel } from "../components/UI";
 
 const SERVICE_ID = "service_74zznfb";
 const TEMPLATE_ID = "template_bl3ru6b";

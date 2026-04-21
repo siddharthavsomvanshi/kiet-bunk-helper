@@ -3,7 +3,8 @@ import { callExtension } from "../utils/bridge";
 import { getWeekRange, parseKietDateTime, formatIsoDate } from "../utils/date";
 import type { StudentContext } from "../App";
 import type { StudentDetails, ScheduleEntry, DatewiseAttendanceBucket } from "../types/kiet";
-import { Panel, Notice, StatusCard, primaryButtonStyle, secondaryButtonStyle } from "../App";
+import { Notice, StatusCard, primaryButtonStyle, secondaryButtonStyle } from "../App";
+import { Panel } from "../components/UI";
 import { formatScheduleTime } from "../utils/date";
 
 export interface TodayStatusProps {

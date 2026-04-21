@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { Panel, EmptyMessage } from '../App';
+import { Panel, EmptyMessage } from '../components/UI';
 
 interface ExamResource {
   id: string;
