@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Panel, EmptyMessage } from '../components/UI';
 
@@ -9,10 +10,12 @@ interface ExamResource {
   title: string;
   file_url: string;
   year?: number | null;
+  status: string;
   created_at: string;
 }
 
 export function ExamMode() {
+  const navigate = useNavigate();
   const [resources, setResources] = useState<ExamResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +33,7 @@ export function ExamMode() {
       const { data, error } = await supabase
         .from('exam_resources')
         .select('*')
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -106,7 +110,28 @@ export function ExamMode() {
 
   return (
     <section style={{ display: 'grid', gap: 14 }}>
-      <Panel title="Exam Mode 📚" subtitle="Access notes, PYQs, and important topics to prepare for exams.">
+      <Panel 
+        title="Exam Mode 📚" 
+        subtitle="Access notes, PYQs, and important topics to prepare for exams."
+        headerAction={
+          <button 
+            onClick={() => navigate('/contribute')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '999px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #0b3b66 0%, #0f766e 100%)',
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(15, 118, 110, 0.2)'
+            }}
+          >
+            + Contribute Notes
+          </button>
+        }
+      >
         <div style={{ display: 'grid', gap: '20px', padding: '10px 0' }}>
           
           {/* Filters */}

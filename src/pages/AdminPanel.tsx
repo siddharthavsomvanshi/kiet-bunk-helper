@@ -10,6 +10,7 @@ interface ExamResource {
   title: string;
   file_url: string;
   year?: number | null;
+  status: string;
   created_at: string;
 }
 
@@ -25,6 +26,7 @@ export function AdminPanel() {
   const [file, setFile] = useState<File | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [uploadMode, setUploadMode] = useState<'file' | 'link'>('file');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   
   const [uploading, setUploading] = useState(false);
   const [resources, setResources] = useState<ExamResource[]>([]);
@@ -100,11 +102,12 @@ export function AdminPanel() {
 
       // 2. Save to Database
       const { error: dbError } = await supabase.from('exam_resources').insert({
-        subject: subject.toUpperCase(),
+        subject: subject.toUpperCase().trim(),
         type,
-        title,
+        title: title.trim(),
         file_url: finalUrl,
         year: year ? parseInt(year) : null,
+        status: 'approved' // Admin uploads are auto-approved
       });
 
       if (dbError) throw dbError;
@@ -121,6 +124,17 @@ export function AdminPanel() {
       setError(err.message || 'An error occurred during upload');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleApprove = async (resource: ExamResource) => {
+    try {
+      const { error } = await supabase.from('exam_resources').update({ status: 'approved' }).eq('id', resource.id);
+      if (error) throw error;
+      
+      setResources(resources.map(r => r.id === resource.id ? { ...r, status: 'approved' } : r));
+    } catch (err: any) {
+      alert(`Error approving: ${err.message}`);
     }
   };
 
@@ -229,9 +243,24 @@ export function AdminPanel() {
         </form>
       </Panel>
 
-      <Panel title="Manage Resources" subtitle={`${resources.length} items uploaded.`}>
+      <Panel title="Manage Resources" subtitle={`${resources.length} items total.`}>
+         <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+           <button 
+             onClick={() => setActiveTab('pending')}
+             style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'pending' ? '#2563eb' : '#e2e8f0', color: activeTab === 'pending' ? '#fff' : '#475569', fontWeight: 600, cursor: 'pointer' }}
+           >
+             Pending Approvals ({resources.filter(r => r.status === 'pending').length})
+           </button>
+           <button 
+             onClick={() => setActiveTab('approved')}
+             style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'approved' ? '#2563eb' : '#e2e8f0', color: activeTab === 'approved' ? '#fff' : '#475569', fontWeight: 600, cursor: 'pointer' }}
+           >
+             Live Resources ({resources.filter(r => r.status === 'approved').length})
+           </button>
+         </div>
+
          <div style={{ display: 'grid', gap: '12px', padding: '10px' }}>
-           {resources.map(res => (
+           {resources.filter(r => r.status === activeTab).map(res => (
              <div key={res.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.1)' }}>
                <div>
                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{res.title}</div>
@@ -243,11 +272,14 @@ export function AdminPanel() {
                </div>
                <div style={{ display: 'flex', gap: '10px' }}>
                  <a href={res.file_url} target="_blank" rel="noreferrer" style={{ fontSize: '14px', color: '#2563eb', textDecoration: 'none', padding: '8px' }}>View</a>
+                 {res.status === 'pending' && (
+                   <button onClick={() => handleApprove(res)} style={{ background: '#dcfce7', color: '#166534', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                 )}
                  <button onClick={() => handleDelete(res)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
                </div>
              </div>
            ))}
-           {resources.length === 0 && <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No resources found.</div>}
+           {resources.filter(r => r.status === activeTab).length === 0 && <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No resources found.</div>}
          </div>
       </Panel>
     </div>

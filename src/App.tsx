@@ -35,6 +35,7 @@ import { Panel, EmptyMessage } from "./components/UI";
 const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const ExamMode = lazy(() => import('./pages/ExamMode').then(m => ({ default: m.ExamMode })));
+const Contribute = lazy(() => import('./pages/Contribute').then(m => ({ default: m.Contribute })));
 
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
@@ -748,11 +749,8 @@ function App() {
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
-          <Route path="/exam" element={
-            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Exam Mode...</div>}>
-              <ExamMode />
-            </Suspense>
-          } />
+          <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Exam Mode...</div>}><ExamMode /></Suspense>} />
+          <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>}><Contribute /></Suspense>} />
           <Route path="/feedback" element={<Snitch />} />
           <Route path="/admin-login" element={
             <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Admin Login...</div>}>
