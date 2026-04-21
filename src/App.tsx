@@ -719,21 +719,12 @@ function App() {
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         
-        <nav style={{
-          display: "flex",
-          gap: "12px",
-          padding: "16px 24px",
-          borderRadius: "20px",
-          background: "#ffffff",
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
-          flexWrap: "wrap",
-        }}>
-          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Dashboard</Link>
-          <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Today Status</Link>
-          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Strategy</Link>
-          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Calendar</Link>
-          <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Snitch</Link>
+        <nav className="app-nav">
+          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Dashboard</Link>
+          <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Today Status</Link>
+          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Strategy</Link>
+          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Calendar</Link>
+          <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Snitch</Link>
         </nav>
 
         <Routes>

@@ -338,3 +338,23 @@ button:focus-visible, input:focus-visible {
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* Navbar — single-row with horizontal scroll on narrow viewports */
+.app-nav {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  /* Hide scrollbar visually, keep it functional */
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
+}
+.app-nav::-webkit-scrollbar {
+  display: none;                /* Chrome/Safari */
+}
