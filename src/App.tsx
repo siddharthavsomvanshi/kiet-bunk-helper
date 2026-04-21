@@ -31,6 +31,10 @@ import { Snitch } from "./pages/Snitch";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 import { Analytics } from "@vercel/analytics/react";
 
+const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const ExamMode = lazy(() => import('./pages/ExamMode').then(m => ({ default: m.ExamMode })));
+
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
 
@@ -724,6 +728,7 @@ function App() {
           <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Today Status</Link>
           <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Strategy</Link>
           <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Calendar</Link>
+          <Link to="/exam" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Exam Mode 📚</Link>
           <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Snitch</Link>
         </nav>
 
@@ -742,7 +747,22 @@ function App() {
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+          <Route path="/exam" element={
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Exam Mode...</div>}>
+              <ExamMode />
+            </Suspense>
+          } />
           <Route path="/feedback" element={<Snitch />} />
+          <Route path="/admin-login" element={
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Admin Login...</div>}>
+              <AdminLogin />
+            </Suspense>
+          } />
+          <Route path="/admin" element={
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Admin Panel...</div>}>
+              <AdminPanel />
+            </Suspense>
+          } />
         </Routes>
 
       </div>
