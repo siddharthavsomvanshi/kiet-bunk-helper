@@ -21,10 +21,13 @@ import {
 } from "./utils/streak";
 import type { StreakResult, StreakSubjectConfig } from "./utils/streak";
 
+import { lazy, Suspense } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { Strategy } from "./pages/Strategy";
 import { CalendarPage } from "./pages/Calendar";
+import { TodayStatus } from "./pages/TodayStatus";
+import { Snitch } from "./pages/Snitch";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -716,24 +719,30 @@ function App() {
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         
-        <nav style={{
-          display: "flex",
-          gap: "12px",
-          padding: "16px 24px",
-          borderRadius: "20px",
-          background: "#ffffff",
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)"
-        }}>
-          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Dashboard</Link>
-          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Strategy</Link>
-          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc" }}>Calendar</Link>
+        <nav className="app-nav">
+          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Dashboard</Link>
+          <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Today Status</Link>
+          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Strategy</Link>
+          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Calendar</Link>
+          <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Snitch</Link>
         </nav>
 
         <Routes>
           <Route path="/" element={<Dashboard data={dashboardData} handlers={dashboardHandlers} />} />
+          <Route path="/today" element={
+            <Suspense fallback={
+              <section style={{ display: "grid", gap: 14 }}>
+                <div style={{ padding: "24px", borderRadius: 28, background: "#fff", border: "1px solid rgba(15,23,42,0.08)", color: "#64748b" }}>
+                  Loading Today's Status...
+                </div>
+              </section>
+            }>
+              <TodayStatus attendance={attendance} studentContext={studentContext} />
+            </Suspense>
+          } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+          <Route path="/feedback" element={<Snitch />} />
         </Routes>
 
       </div>
