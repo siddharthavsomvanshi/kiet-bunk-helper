@@ -12,6 +12,8 @@ export interface DayStreakRecord {
   attended: number;
 }
 
+export type SubjectAbsencesByDate = Record<string, Record<string, number>>;
+
 export interface StreakResult {
   streak: number | null;
   isReliable: boolean;
@@ -20,13 +22,20 @@ export interface StreakResult {
 
 type FetchGlobalDatewiseAttendanceResult = {
   data: Record<string, DayStreakRecord>;
+  subjectAbsencesByDate: SubjectAbsencesByDate;
   isReliable: boolean;
   lastUpdated: number;
 };
 
 type StreakCachePayload = {
   data: Record<string, DayStreakRecord>;
+  subjectAbsencesByDate: SubjectAbsencesByDate;
   lastUpdated: number;
+};
+
+type CachedPastPayload = {
+  data: Record<string, DayStreakRecord>;
+  subjectAbsencesByDate: SubjectAbsencesByDate;
 };
 
 const CACHE_KEY_PREFIX = "kiet_streak_cache";
@@ -88,25 +97,49 @@ function isDayStreakRecord(value: unknown): value is DayStreakRecord {
   );
 }
 
-function readCachedPastData(cacheKey: string, todayKey: string): Record<string, DayStreakRecord> {
+function isSubjectAbsenceMap(value: unknown): value is Record<string, number> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  return Object.values(value).every((count) => typeof count === "number");
+}
+
+function readCachedPastPayload(cacheKey: string, todayKey: string): CachedPastPayload {
   try {
     const cached = localStorage.getItem(cacheKey);
     if (!cached) {
-      return {};
+      return { data: {}, subjectAbsencesByDate: {} };
     }
 
     const parsed = JSON.parse(cached) as Partial<StreakCachePayload> | null;
     if (!parsed || typeof parsed !== "object" || !parsed.data || typeof parsed.data !== "object") {
-      return {};
+      return { data: {}, subjectAbsencesByDate: {} };
     }
 
-    return Object.fromEntries(
+    const data = Object.fromEntries(
       Object.entries(parsed.data)
         .filter(([dateKey, value]) => dateKey < todayKey && isDayStreakRecord(value))
         .map(([dateKey, value]) => [dateKey, value]),
     );
+
+    const subjectAbsencesByDate =
+      parsed.subjectAbsencesByDate && typeof parsed.subjectAbsencesByDate === "object"
+        ? Object.fromEntries(
+            Object.entries(parsed.subjectAbsencesByDate)
+              .filter(
+                ([dateKey, value]) =>
+                  dateKey < todayKey &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(dateKey) &&
+                  isSubjectAbsenceMap(value),
+              )
+              .map(([dateKey, value]) => [dateKey, value]),
+          )
+        : {};
+
+    return { data, subjectAbsencesByDate };
   } catch {
-    return {};
+    return { data: {}, subjectAbsencesByDate: {} };
   }
 }
 
@@ -117,6 +150,31 @@ function getPastOnlyData(
   return Object.fromEntries(
     Object.entries(data).filter(([dateKey]) => dateKey < todayKey),
   );
+}
+
+function getPastOnlySubjectAbsencesByDate(
+  subjectAbsencesByDate: SubjectAbsencesByDate,
+  todayKey: string,
+): SubjectAbsencesByDate {
+  return Object.fromEntries(
+    Object.entries(subjectAbsencesByDate).filter(([dateKey]) => dateKey < todayKey),
+  );
+}
+
+function mergeSubjectAbsencesByDate(
+  cachedSubjectAbsencesByDate: SubjectAbsencesByDate,
+  freshSubjectAbsencesByDate: SubjectAbsencesByDate,
+): SubjectAbsencesByDate {
+  const merged: SubjectAbsencesByDate = { ...cachedSubjectAbsencesByDate };
+
+  for (const [dateKey, subjectAbsences] of Object.entries(freshSubjectAbsencesByDate)) {
+    merged[dateKey] = {
+      ...(cachedSubjectAbsencesByDate[dateKey] ?? {}),
+      ...subjectAbsences,
+    };
+  }
+
+  return merged;
 }
 
 function isCountableAttendanceStatus(status: string): boolean {
@@ -138,8 +196,9 @@ export async function fetchGlobalDatewiseAttendance(
 
   const todayKey = normalizeIsoDateString(new Date());
   const cacheKey = getCacheKey(studentId, sessionId, subjects);
-  const cachedPastData = readCachedPastData(cacheKey, todayKey);
+  const cachedPastPayload = readCachedPastPayload(cacheKey, todayKey);
   const freshData: Record<string, DayStreakRecord> = {};
+  const freshSubjectAbsencesByDate: SubjectAbsencesByDate = {};
   const seenClasses = new Set<string>();
   let hadFailure = false;
 
@@ -202,6 +261,11 @@ export async function fetchGlobalDatewiseAttendance(
 
           if (isAttendedStatus(status)) {
             dayRecord.attended += 1;
+          } else if (status === "ABSENT") {
+            const subjectKey = `${subject.courseId}:${subject.courseComponentId}`;
+            const subjectAbsencesForDay = freshSubjectAbsencesByDate[dateKey] ?? {};
+            subjectAbsencesForDay[subjectKey] = (subjectAbsencesForDay[subjectKey] ?? 0) + 1;
+            freshSubjectAbsencesByDate[dateKey] = subjectAbsencesForDay;
           }
 
           freshData[dateKey] = dayRecord;
@@ -218,18 +282,31 @@ export async function fetchGlobalDatewiseAttendance(
   }
 
   if (hadFailure) {
-    return { data: {}, isReliable: false, lastUpdated: Date.now() };
+    return {
+      data: {},
+      subjectAbsencesByDate: {},
+      isReliable: false,
+      lastUpdated: Date.now(),
+    };
   }
 
   const mergedData = {
-    ...cachedPastData,
+    ...cachedPastPayload.data,
     ...freshData,
   };
+  const mergedSubjectAbsencesByDate = mergeSubjectAbsencesByDate(
+    cachedPastPayload.subjectAbsencesByDate,
+    freshSubjectAbsencesByDate,
+  );
   const lastUpdated = Date.now();
 
   try {
     const cachePayload: StreakCachePayload = {
       data: getPastOnlyData(mergedData, todayKey),
+      subjectAbsencesByDate: getPastOnlySubjectAbsencesByDate(
+        mergedSubjectAbsencesByDate,
+        todayKey,
+      ),
       lastUpdated,
     };
 
@@ -238,7 +315,12 @@ export async function fetchGlobalDatewiseAttendance(
     // Ignore cache write failures and keep the fresh data in memory.
   }
 
-  return { data: mergedData, isReliable: true, lastUpdated };
+  return {
+    data: mergedData,
+    subjectAbsencesByDate: mergedSubjectAbsencesByDate,
+    isReliable: true,
+    lastUpdated,
+  };
 }
 
 export function calculateStrictStreak(

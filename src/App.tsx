@@ -19,7 +19,12 @@ import {
   calculateStrictStreak,
   fetchGlobalDatewiseAttendance,
 } from "./utils/streak";
-import type { StreakResult, StreakSubjectConfig } from "./utils/streak";
+import type {
+  DayStreakRecord,
+  StreakResult,
+  StreakSubjectConfig,
+  SubjectAbsencesByDate,
+} from "./utils/streak";
 
 import { lazy, Suspense } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
@@ -139,6 +144,9 @@ function App() {
   const [datewiseErrors, setDatewiseErrors] = useState<Record<string, string>>({});
   const [selectedBunkDates, setSelectedBunkDates] = useState<Set<string>>(new Set());
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null);
+  const [streakDayData, setStreakDayData] = useState<Record<string, DayStreakRecord>>({});
+  const [streakSubjectAbsencesByDate, setStreakSubjectAbsencesByDate] =
+    useState<SubjectAbsencesByDate>({});
   const [streakLoading, setStreakLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -353,12 +361,16 @@ function App() {
 
   useEffect(() => {
     if (!attendance) {
+      setStreakDayData({});
+      setStreakSubjectAbsencesByDate({});
       setStreakResult(null);
       setStreakLoading(false);
       return;
     }
 
     if (!studentContext) {
+      setStreakDayData({});
+      setStreakSubjectAbsencesByDate({});
       setStreakResult({
         streak: null,
         isReliable: false,
@@ -369,6 +381,8 @@ function App() {
     }
 
     if (streakSubjects.length === 0) {
+      setStreakDayData({});
+      setStreakSubjectAbsencesByDate({});
       setStreakResult({
         streak: 0,
         isReliable: true,
@@ -391,10 +405,14 @@ function App() {
         const nextResult = calculateStrictStreak(fetchResult);
 
         if (!isCancelled) {
+          setStreakDayData(fetchResult.data);
+          setStreakSubjectAbsencesByDate(fetchResult.subjectAbsencesByDate);
           setStreakResult(nextResult);
         }
       } catch {
         if (!isCancelled) {
+          setStreakDayData({});
+          setStreakSubjectAbsencesByDate({});
           setStreakResult({
             streak: null,
             isReliable: false,
@@ -432,6 +450,8 @@ function App() {
         setDatewiseErrors({});
         setStudentContextOverride(null);
         setShowWholeDayPlanner(false);
+        setStreakDayData({});
+        setStreakSubjectAbsencesByDate({});
         setStreakResult(null);
         setStreakLoading(false);
         setLoadState("idle");
@@ -484,6 +504,8 @@ function App() {
       setStudentContextOverride(null);
       setUpcomingClasses([]);
       setFutureClasses([]);
+      setStreakDayData({});
+      setStreakSubjectAbsencesByDate({});
       setStreakResult(null);
       setStreakLoading(false);
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
@@ -560,6 +582,8 @@ function App() {
       setShowWholeDayPlanner(false);
       setSelectedBunkDates(new Set());
       setSessionCapturedAt(null);
+      setStreakDayData({});
+      setStreakSubjectAbsencesByDate({});
       setStreakResult(null);
       setStreakLoading(false);
       setLoadState("idle");
@@ -711,6 +735,11 @@ function App() {
     overallWholeDayPlan,
     wholeDayPlanSummaries,
     overallSummary,
+    subjectSummaries,
+    streakDayData,
+    streakSubjectAbsencesByDate,
+    streakLoading,
+    streakIsReliable: streakResult?.isReliable ?? false,
   };
 
   const strategyHandlers = {
