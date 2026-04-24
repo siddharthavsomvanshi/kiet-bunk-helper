@@ -149,6 +149,7 @@ function App() {
     useState<SubjectAbsencesByDate>({});
   const [streakLoading, setStreakLoading] = useState(false);
   const [error, setError] = useState("");
+  const location = useLocation();
 
   const studentContext = useMemo(
     () => studentContextOverride ?? getStudentContext(attendance),
@@ -630,7 +631,7 @@ function App() {
       setDatewiseErrors((previous) => ({
         ...previous,
         [subject.id]:
-          "The synced KIET attendance payload did not include a student id yet. Refresh once and try again.",
+          "Attendance details are not ready yet. Refresh and try again.",
       }));
       return;
     }
@@ -754,13 +755,13 @@ function App() {
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         
-        <nav className="app-nav">
-          <Link to="/" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Dashboard</Link>
-          <Link to="/today" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Today Status</Link>
-          <Link to="/strategy" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Strategy</Link>
-          <Link to="/calendar" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Calendar</Link>
-          <Link to="/exam" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Exam Mode 📚</Link>
-          <Link to="/feedback" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 700, padding: "8px 16px", borderRadius: "12px", background: "#f8fafc", flexShrink: 0, whiteSpace: "nowrap" }}>Snitch</Link>
+        <nav className="app-nav rise-in">
+          <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+          <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
+          <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+          <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+          <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
+          <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
         </nav>
 
         <Routes>
@@ -768,8 +769,17 @@ function App() {
           <Route path="/today" element={
             <Suspense fallback={
               <section style={{ display: "grid", gap: 14 }}>
-                <div style={{ padding: "24px", borderRadius: 28, background: "#fff", border: "1px solid rgba(15,23,42,0.08)", color: "#64748b" }}>
-                  Loading Today's Status...
+                <div
+                  className="standard-card"
+                  style={{
+                    padding: "24px",
+                    borderRadius: 28,
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Loading today's overview...
                 </div>
               </section>
             }>
@@ -778,16 +788,16 @@ function App() {
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
-          <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Exam Mode...</div>}><ExamMode /></Suspense>} />
-          <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>}><Contribute /></Suspense>} />
+          <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode /></Suspense>} />
+          <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading upload form...</div>}><Contribute /></Suspense>} />
           <Route path="/feedback" element={<Snitch />} />
           <Route path="/admin-login" element={
-            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Admin Login...</div>}>
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading admin sign in...</div>}>
               <AdminLogin />
             </Suspense>
           } />
           <Route path="/admin" element={
-            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading Admin Panel...</div>}>
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading admin panel...</div>}>
               <AdminPanel />
             </Suspense>
           } />
@@ -801,47 +811,87 @@ function App() {
 
 export function SetupCard({ hasData }: { hasData: boolean }) {
   return (
-    <section className="premium-panel rise-in" style={{ padding: "28px", borderRadius: 28, background: "#ffffff", border: "1px solid rgba(15, 23, 42, 0.08)", boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)", display: "grid", gap: 24 }}>
+    <section
+      className="premium-panel rise-in"
+      style={{ padding: "28px", borderRadius: 28, display: "grid", gap: 24 }}
+    >
       {!hasData && (
-        <div style={{ padding: "14px 18px", borderRadius: 16, background: "#fee2e2", color: "#991b1b", fontSize: 15, fontWeight: 600 }}>
-          ⚠️ No attendance data found. Please install the extension and sync from ERP.
+        <div
+          className="notice-banner"
+          style={{
+            padding: "14px 18px",
+            borderRadius: 16,
+            background: "var(--danger-soft)",
+            color: "var(--danger)",
+            fontSize: 15,
+            fontWeight: 600,
+          }}
+        >
+          Connect KIET to load your attendance.
         </div>
       )}
 
       <div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: "0 0 10px 0" }}>
-          🔌 Setup Required (One-Time)
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", margin: "0 0 10px 0" }}>
+          Get connected
         </h2>
-        <p style={{ margin: 0, color: "#475569", fontSize: 16, lineHeight: 1.6 }}>
-          The Bunk Helper requires a local Chrome Extension to safely pass KIET sessions securely from your browser to this dashboard.
+        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6 }}>
+          Install the KIET extension once, then track attendance here.
         </p>
       </div>
 
       <button
         type="button"
         className="action-button action-button--primary"
-        style={{ padding: "14px 28px", alignSelf: "start", justifySelf: "start", background: "#0f172a", color: "#fff", border: "none", borderRadius: 999, fontWeight: 700, cursor: "pointer", fontSize: 15, boxShadow: "0 8px 20px rgba(15, 23, 42, 0.15)" }}
+        style={{ ...primaryButtonStyle(false), padding: "14px 28px", alignSelf: "start", justifySelf: "start", fontSize: 15 }}
         onClick={() => {
           window.open("/bunk-helper-extension.zip?v=0.1.1", "_blank");
         }}
       >
-        ⬇️ Download Extension
+        Download extension
       </button>
 
       <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
-        <div style={{ padding: "24px 28px", background: "#f8fafc", borderRadius: 20, border: "1px solid #e2e8f0" }}>
-          <ol style={{ margin: 0, paddingLeft: 22, display: "grid", gap: 14, color: "#334155", fontSize: 16, lineHeight: 1.5 }}>
-            <li><strong>Download the extension</strong> using the button above.</li>
-            <li><strong>Extract the ZIP file</strong> to a permanently stored folder on your computer.</li>
-            <li>Open Chrome and go to: <code style={{ background: "#e2e8f0", padding: "4px 8px", borderRadius: 6, fontWeight: 600, color: "#0f172a" }}>chrome://extensions/</code></li>
-            <li>Enable the <strong>"Developer Mode"</strong> toggle (top right corner).</li>
-            <li>Click <strong>"Load Unpacked"</strong>.</li>
+        <div
+          className="standard-card"
+          style={{
+            padding: "24px 28px",
+            background: "var(--bg-card-subtle)",
+            borderRadius: 20,
+            border: "1px solid var(--border)",
+          }}
+        >
+          <ol
+            style={{
+              margin: 0,
+              paddingLeft: 22,
+              display: "grid",
+              gap: 14,
+              color: "var(--text-secondary)",
+              fontSize: 16,
+              lineHeight: 1.5,
+            }}
+          >
+            <li><strong>Download the extension</strong>.</li>
+            <li><strong>Extract the ZIP</strong> to a folder you will keep.</li>
             <li>
-              👉 <strong>Select the folder that contains <code>manifest.json</code></strong><br/>
-              <span style={{ fontSize: 14, color: "#dc2626", fontWeight: 700, marginTop: 6, display: "inline-block", background: "#fee2e2", padding: "4px 10px", borderRadius: 8 }}>
-                (NOT the full project folder if it is nested inside! You must select the specific inner folder containing manifest.json).
-              </span>
+              Open{" "}
+              <code
+                style={{
+                  background: "var(--bg-section)",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                }}
+              >
+                chrome://extensions/
+              </code>
+              .
             </li>
+            <li>Turn on <strong>Developer Mode</strong>.</li>
+            <li>Click <strong>Load unpacked</strong>.</li>
+            <li><strong>Select the folder that contains <code>manifest.json</code></strong>.</li>
           </ol>
         </div>
       </div>
@@ -852,15 +902,15 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
 export function StatusCard({ title, value, tone }: { title: string; value: string; tone: string }) {
   return (
     <div
-      className="status-card rise-in"
+      className="status-card standard-card rise-in"
       style={{
         padding: 16,
         borderRadius: 22,
-        background: "rgba(255, 255, 255, 0.88)",
-        border: "1px solid rgba(15, 23, 42, 0.08)",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
       }}
     >
-      <div className="status-label" style={{ color: "#64748b", fontSize: 13, marginBottom: 6 }}>
+      <div className="status-label" style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 6 }}>
         {title}
       </div>
       <div className="status-value" style={{ color: tone, fontWeight: 700 }}>
@@ -888,7 +938,7 @@ export function ProgressBar({
           justifyContent: "space-between",
           gap: 12,
           fontSize: 12,
-          color: "#64748b",
+          color: "var(--text-muted)",
         }}
       >
         <span>{label}</span>
@@ -899,18 +949,15 @@ export function ProgressBar({
         style={{
           height: 12,
           borderRadius: 999,
-          background: "#e2e8f0",
+          background: "var(--bg-section)",
           overflow: "hidden",
         }}
       >
         <div
-          className="progress-fill"
+          className={`progress-fill ${healthy ? "progress-fill--healthy" : ""}`}
           style={{
             width: `${Math.min(percentage, 100)}%`,
             height: "100%",
-            background: healthy
-              ? "linear-gradient(90deg, #16a34a 0%, #22c55e 100%)"
-              : "linear-gradient(90deg, #dc2626 0%, #f97316 100%)",
           }}
         />
       </div>
@@ -932,16 +979,16 @@ export function RecoveryNote({
   if (recovery.status === "safe") {
     return (
       <div
-        className="recovery-note"
+        className="recovery-note recovery-note--success"
         style={{
           padding: 12,
           borderRadius: 14,
-          background: "#dcfce7",
-          color: "#166534",
+          background: "var(--success-soft)",
+          color: "var(--success)",
           fontSize: 14,
         }}
       >
-        You still stay above 75% after the selected bunk days.
+        Still above 75% after these bunks.
       </div>
     );
   }
@@ -949,22 +996,22 @@ export function RecoveryNote({
   if (recovery.status === "recoverable") {
     return (
       <div
-        className="recovery-note"
+        className="recovery-note recovery-note--warning"
         style={{
           padding: 12,
           borderRadius: 14,
-          background: "#fef3c7",
-          color: "#92400e",
+          background: "var(--warning-soft)",
+          color: "var(--warning)",
           fontSize: 14,
         }}
       >
-        Falls below 75% after the selected days, but recovers by{" "}
+        Drops below 75%, but recovers by{" "}
         <strong>{recovery.recoveryDateLabel}</strong>
         {typeof recovery.recoveryDays === "number" && cutoffDateKey
           ? ` (${recovery.recoveryDays} day${recovery.recoveryDays === 1 ? "" : "s"} later)`
           : ""}
         {typeof recovery.recoveryClasses === "number"
-          ? ` after attending ${recovery.recoveryClasses} class${recovery.recoveryClasses === 1 ? "" : "es"}`
+          ? ` after ${recovery.recoveryClasses} attended class${recovery.recoveryClasses === 1 ? "" : "es"}`
           : ""}
         .
       </div>
@@ -973,17 +1020,16 @@ export function RecoveryNote({
 
   return (
     <div
-      className="recovery-note"
-      style={{
-        padding: 12,
-        borderRadius: 14,
-        background: "#fee2e2",
-        color: "#991b1b",
-        fontSize: 14,
-      }}
-    >
-      This plan drops attendance below 75%, and it does not recover within the loaded{" "}
-      {FUTURE_WEEKS_TO_FETCH}-week schedule horizon.
+      className="recovery-note recovery-note--danger"
+        style={{
+          padding: 12,
+          borderRadius: 14,
+          background: "var(--danger-soft)",
+          color: "var(--danger)",
+          fontSize: 14,
+        }}
+      >
+      Drops below 75% and does not recover within the loaded schedule.
     </div>
   );
 }
@@ -1017,7 +1063,7 @@ export function Notice({
 export function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric-chip">
-      <div className="metric-label" style={{ fontSize: 12, color: "#64748b" }}>
+      <div className="metric-label" style={{ fontSize: 12, color: "var(--text-muted)" }}>
         {label}
       </div>
       <div className="metric-value" style={{ fontWeight: 700 }}>
@@ -1034,25 +1080,23 @@ export function primaryButtonStyle(disabled: boolean): CSSProperties {
     border: "none",
     borderRadius: 999,
     padding: "12px 20px",
-    background: disabled
-      ? "linear-gradient(135deg, rgba(148, 163, 184, 0.72), rgba(203, 213, 225, 0.96))"
-      : "linear-gradient(135deg, #0b3b66 0%, #0f766e 52%, #2563eb 100%)",
-    color: "#fff",
+    background: disabled ? "var(--border-strong)" : "var(--primary)",
+    color: "var(--text-on-primary)",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 700,
-    boxShadow: disabled ? "none" : "0 14px 30px rgba(37, 99, 235, 0.18)",
+    boxShadow: disabled ? "none" : "var(--shadow-button)",
   };
 }
 
 export const secondaryButtonStyle: CSSProperties = {
-  border: "1px solid rgba(15, 23, 42, 0.12)",
+  border: "1px solid var(--border)",
   borderRadius: 999,
   padding: "12px 20px",
-  background: "rgba(255, 255, 255, 0.82)",
-  color: "#0f172a",
+  background: "var(--bg-card)",
+  color: "var(--text-primary)",
   cursor: "pointer",
   fontWeight: 600,
-  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+  boxShadow: "var(--shadow-xs)",
 };
 
 export function AttendanceSniper({ data, schedule }: { data: OverallSummary | null; schedule: BunkableDay[] }) {
@@ -1161,19 +1205,30 @@ export function AttendanceSniper({ data, schedule }: { data: OverallSummary | nu
   const currentPercent = data.total === 0 ? 0 : (data.present / data.total) * 100;
 
   return (
-    <Panel title="Attendance Sniper 🎯" subtitle="Set a precise target percentage and strictly calculate the exact classes to attend or miss safely.">
+    <Panel title="Attendance Target" subtitle="See the closest paths to your target percentage.">
       <div className="surface-card surface-card--highlight rise-in" style={{ padding: "20px 24px", display: "grid", gap: 20 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 8, flex: 1, minWidth: 200 }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>Target Percentage (%)</label>
+            <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>Target (%)</label>
             <input 
+              className="standard-input"
               type="number" 
               value={targetInput} 
               onChange={e => setTargetInput(e.target.value)} 
               placeholder="e.g. 92"
               min="0"
               max="100"
-              style={{ padding: "10px 14px", borderRadius: 10, border: "2px solid #cbd5e1", fontSize: 16, width: "100%", background: "#ffffff", outline: "none", color: "#0f172a", fontWeight: "600" }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid var(--border-strong)",
+                fontSize: 16,
+                width: "100%",
+                background: "var(--bg-card)",
+                outline: "none",
+                color: "var(--text-primary)",
+                fontWeight: "600",
+              }}
             />
           </div>
           <button 
@@ -1182,48 +1237,50 @@ export function AttendanceSniper({ data, schedule }: { data: OverallSummary | nu
             onClick={handleCalculate}
             style={{ padding: "12px 24px" }}
           >
-            Calculate Strategy
+            Show plan
           </button>
         </div>
 
         {result && (
           <div style={{ display: "grid", gap: 12, marginTop: 8 }}>
-            <div style={{ fontWeight: 800, fontSize: 17, color: "#0f172a" }}>🎯 Target: {result.target}% (Current: {currentPercent.toFixed(1)}%)</div>
+            <div style={{ fontWeight: 800, fontSize: 17, color: "var(--text-primary)" }}>
+              Target {result.target}% from {currentPercent.toFixed(1)}%
+            </div>
             
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-              <div className="surface-card" style={{ padding: 18, display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>📉 Closest Below</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{result.belowPercent.toFixed(2)}%</div>
-                <div style={{ fontSize: 14, color: "#475569", lineHeight: 1.4, marginTop: 4 }}>
-                  {result.belowPresent} attended out of {result.belowTotal} classes.<br/>
-                  <strong style={{ color: result.target > currentPercent ? "#64748b" : "#dc2626" }}>
+              <div className="surface-card interactive-row" style={{ padding: 18, display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Closest below</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{result.belowPercent.toFixed(2)}%</div>
+                <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.4, marginTop: 4 }}>
+                  Attended {result.belowPresent} of {result.belowTotal} classes.<br/>
+                  <strong style={{ color: result.target > currentPercent ? "var(--text-muted)" : "var(--danger)" }}>
                     {(() => {
                       const diff = result.belowTotal - data.total;
-                      if (diff <= 0) return "(Exact match or 0 change)";
+                      if (diff <= 0) return "Exact match";
                       const dateMap = mapClassesToDate(diff);
                       if (!dateMap) return `(+${diff} classes)`;
-                      if (dateMap.days === -1) return "Exceeds 12-week schedule boundary";
-                      return `Hits margin on ${dateMap.label} (${dateMap.days} days)`;
+                      if (dateMap.days === -1) return "Outside loaded schedule";
+                      return `${dateMap.label} (${dateMap.days} day${dateMap.days === 1 ? "" : "s"})`;
                     })()}
                   </strong>
                 </div>
               </div>
 
-              <div className="surface-card" style={{ padding: 18, display: "grid", gap: 8, border: "2px solid rgba(59, 130, 246, 0.4)" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  📈 Closest Above {result.target > currentPercent ? "(Required)" : "(Safe)"}
+              <div className="surface-card interactive-row" style={{ padding: 18, display: "grid", gap: 8, border: "2px solid var(--info-soft)" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--info)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Closest above {result.target > currentPercent ? "(Needed)" : "(Safe)"}
                 </div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: "#1d4ed8", lineHeight: 1 }}>{result.abovePercent.toFixed(2)}%</div>
-                <div style={{ fontSize: 14, color: "#475569", lineHeight: 1.4, marginTop: 4 }}>
-                  {result.abovePresent} attended out of {result.aboveTotal} classes.<br/>
-                  <strong style={{ color: result.target > currentPercent ? "#16a34a" : "#64748b" }}>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "var(--info)", lineHeight: 1 }}>{result.abovePercent.toFixed(2)}%</div>
+                <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.4, marginTop: 4 }}>
+                  Attended {result.abovePresent} of {result.aboveTotal} classes.<br/>
+                  <strong style={{ color: result.target > currentPercent ? "var(--success)" : "var(--text-muted)" }}>
                     {(() => {
                       const diff = result.aboveTotal - data.total;
-                      if (diff <= 0) return "(Exact match or 0 change)";
+                      if (diff <= 0) return "Exact match";
                       const dateMap = mapClassesToDate(diff);
                       if (!dateMap) return `(+${diff} classes)`;
-                      if (dateMap.days === -1) return "Exceeds 12-week schedule boundary";
-                      return `Hits margin on ${dateMap.label} (${dateMap.days} days)`;
+                      if (dateMap.days === -1) return "Outside loaded schedule";
+                      return `${dateMap.label} (${dateMap.days} day${dateMap.days === 1 ? "" : "s"})`;
                     })()}
                   </strong>
                 </div>
@@ -1255,14 +1312,14 @@ export function formatStreakMetricValue(result: StreakResult | null, isLoading: 
   }
 
   if (!result.isReliable || result.streak === null) {
-    return "Data syncing…";
+    return "Syncing";
   }
 
   if (result.streak === 0) {
-    return "0 days 😭";
+    return "0 days";
   }
 
-  return `${result.streak} day${result.streak === 1 ? "" : "s"} in a row 🚀`;
+  return `${result.streak} day${result.streak === 1 ? "" : "s"}`;
 }
 
 function getStudentContext(attendance: StudentDetails | null): StudentContext | null {
@@ -1389,23 +1446,23 @@ export function getAttendanceStatusTheme(status: string | null): { background: s
   switch (normalizeIdentifier(status)) {
     case "PRESENT":
       return {
-        background: "#dcfce7",
-        color: "#166534",
+        background: "var(--success-soft)",
+        color: "var(--success)",
       };
     case "ADJUSTED":
       return {
-        background: "#fef3c7",
-        color: "#92400e",
+        background: "var(--warning-soft)",
+        color: "var(--warning)",
       };
     case "ABSENT":
       return {
-        background: "#fee2e2",
-        color: "#991b1b",
+        background: "var(--danger-soft)",
+        color: "var(--danger)",
       };
     default:
       return {
-        background: "#e2e8f0",
-        color: "#334155",
+        background: "var(--secondary-soft)",
+        color: "var(--secondary)",
       };
   }
 }

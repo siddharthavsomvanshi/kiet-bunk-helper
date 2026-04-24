@@ -86,30 +86,27 @@ function getLeaveRescueIntensity(missed: number): LeaveRescueIntensity {
 function getLeaveRescueTheme(intensity: LeaveRescueIntensity) {
   if (intensity === "high") {
     return {
-      icon: "🔥",
-      label: "High",
-      color: "#9a3412",
-      border: "1px solid rgba(251, 146, 60, 0.35)",
-      background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+      label: "High impact",
+      color: "var(--danger)",
+      borderClass: "border-l-danger",
+      badgeBackground: "var(--danger-soft)",
     };
   }
 
   if (intensity === "medium") {
     return {
-      icon: "⚠️",
-      label: "Medium",
-      color: "#92400e",
-      border: "1px solid rgba(251, 191, 36, 0.35)",
-      background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+      label: "Medium impact",
+      color: "var(--warning)",
+      borderClass: "border-l-warning",
+      badgeBackground: "var(--warning-soft)",
     };
   }
 
   return {
-    icon: "🟢",
-    label: "Low",
-    color: "#166534",
-    border: "1px solid rgba(74, 222, 128, 0.35)",
-    background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+    label: "Low impact",
+    color: "var(--success)",
+    borderClass: "border-l-success",
+    badgeBackground: "var(--success-soft)",
   };
 }
 
@@ -126,30 +123,33 @@ function formatPercentage(value: number): string {
 function getLeaveRescueImpactTheme(subject: LeaveRescueImpactSubject) {
   if (subject.crossesThreshold) {
     return {
-      icon: "✅",
-      label: "Safe",
-      color: "#166534",
-      border: "1px solid rgba(74, 222, 128, 0.35)",
-      background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+      label: "Now safe",
+      color: "var(--success)",
+      borderClass: "border-l-success",
+      border: "1px solid var(--border)",
+      background: "var(--bg-card)",
+      badgeBackground: "var(--success-soft)",
     };
   }
 
   if (subject.stillRisky) {
     return {
-      icon: "⚠️",
       label: "Still risky",
-      color: "#92400e",
-      border: "1px solid rgba(251, 191, 36, 0.35)",
-      background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+      color: "var(--warning)",
+      borderClass: "border-l-warning",
+      border: "1px solid var(--border)",
+      background: "var(--bg-card)",
+      badgeBackground: "var(--warning-soft)",
     };
   }
 
   return {
-    icon: "📈",
     label: "Improved",
-    color: "#1d4ed8",
-    border: "1px solid rgba(96, 165, 250, 0.35)",
-    background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+    color: "var(--primary)",
+    borderClass: "border-l-primary",
+    border: "1px solid var(--border)",
+    background: "var(--bg-card)",
+    badgeBackground: "var(--primary-soft)",
   };
 }
 
@@ -310,7 +310,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
       <section style={{ display: "grid", gap: 14 }}>
         <Panel
           title="Whole Day Bunk Planner"
-          subtitle={`Select one or more future dates. The dashboard will simulate bunking every class on those dates, then estimate how and when your attendance recovers within the next ${FUTURE_WEEKS_TO_FETCH} weeks.`}
+          subtitle="Plan your bunks without dropping below 75%."
         >
           <div className="planner-panel-shell" style={{ display: "grid", gap: 18 }}>
             <div
@@ -323,10 +323,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ color: "#5f6f69", fontSize: 14, maxWidth: "72ch" }}>
-                Pick dates on the left. The panel recalculates overall and subject-wise
-                attendance after the last selected bunk day, then estimates recovery inside the
-                loaded schedule horizon.
+              <div style={{ color: "var(--text-secondary)", fontSize: 14, maxWidth: "72ch" }}>
+                Pick future dates and see the impact before you skip.
               </div>
             </div>
 
@@ -345,21 +343,21 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                     gap: 6,
                     padding: 14,
                     borderRadius: 16,
-                    background: "#f8fafc",
-                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    background: "var(--bg-card-subtle)",
+                    border: "1px solid var(--border)",
                   }}
                 >
-                  <strong>Pick full days to bunk</strong>
-                  <span style={{ color: "#64748b", fontSize: 14 }}>
-                    Selected dates: {data.selectedBunkDates.size}
+                  <strong>Pick bunk days</strong>
+                  <span style={{ color: "var(--text-muted)", fontSize: 14 }}>
+                    Selected: {data.selectedBunkDates.size}
                     {data.selectedBunkCutoffDateKey
-                      ? ` - simulated through ${formatDateKeyLabel(data.selectedBunkCutoffDateKey)}`
+                      ? ` - through ${formatDateKeyLabel(data.selectedBunkCutoffDateKey)}`
                       : ""}
                   </span>
                 </div>
 
                 {data.bunkableDays.length === 0 ? (
-                  <EmptyMessage message="No future class dates are loaded yet." />
+                  <EmptyMessage message="No upcoming class days yet." />
                 ) : (
                   <div
                     style={{
@@ -375,7 +373,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
 
                       return (
                         <label
-                          className="surface-card"
+                          className="surface-card interactive-row"
                           key={day.dateKey}
                           style={{
                             display: "grid",
@@ -384,8 +382,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                             alignItems: "start",
                             padding: 14,
                             borderRadius: 16,
-                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                            background: isSelected ? "#dbeafe" : "#fff",
+                            border: `1px solid ${isSelected ? "var(--primary)" : "var(--border)"}`,
+                            background: isSelected ? "var(--primary-soft)" : "var(--bg-card)",
                             cursor: "pointer",
                           }}
                         >
@@ -397,10 +395,10 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           />
                           <div style={{ display: "grid", gap: 4 }}>
                             <div style={{ fontWeight: 700 }}>{day.label}</div>
-                            <div style={{ color: "#475569", fontSize: 14 }}>
+                            <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                               {day.entries.length} class{day.entries.length === 1 ? "" : "es"}
                             </div>
-                            <div style={{ color: "#64748b", fontSize: 13 }}>
+                            <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                               {day.entries
                                 .slice(0, 3)
                                 .map((entry) => entry.courseCode ?? entry.title)
@@ -417,18 +415,14 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
 
               <div style={{ display: "grid", gap: 14 }}>
                 {data.selectedBunkDates.size === 0 || !data.overallWholeDayPlan ? (
-                  <EmptyMessage message="Select at least one future date to simulate a whole-day bunk plan." />
+                  <EmptyMessage message="Select a future date to start planning." />
                 ) : (
                   <>
                     <div
-                      className="surface-card surface-card--highlight rise-in"
+                      className="standard-card rise-in border-l-primary"
                       style={{
                         display: "grid",
                         gap: 10,
-                        padding: 18,
-                        borderRadius: 18,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%)",
                       }}
                     >
                       <div
@@ -441,9 +435,9 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                         }}
                       >
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall after selected days</div>
-                          <div style={{ color: "#64748b", fontSize: 13 }}>
-                            This is your overall attendance after the last selected bunk date.
+                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall after bunks</div>
+                          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                            Your attendance after the last selected day.
                           </div>
                         </div>
                         <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
@@ -451,8 +445,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                             style={{
                               color:
                                 data.overallWholeDayPlan.currentPercentage >= 75
-                                  ? "#166534"
-                                  : "#b91c1c",
+                                  ? "var(--success)"
+                                  : "var(--danger)",
                             }}
                           >
                             Current: {data.overallWholeDayPlan.currentPercentage.toFixed(1)}%
@@ -461,25 +455,25 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                             style={{
                               color:
                                 data.overallWholeDayPlan.afterSelectedPercentage >= 75
-                                  ? "#166534"
-                                  : "#b91c1c",
+                                  ? "var(--success)"
+                                  : "var(--danger)",
                               fontWeight: 700,
                               fontSize: 13,
                             }}
                           >
-                            After selected days:{" "}
+                            After bunks:{" "}
                             {data.overallWholeDayPlan.afterSelectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
 
                       <ProgressBar
-                        label="Current overall"
+                        label="Current"
                         percentage={data.overallWholeDayPlan.currentPercentage}
                         healthy={data.overallWholeDayPlan.currentPercentage >= 75}
                       />
                       <ProgressBar
-                        label={`After selected days (${data.overallWholeDayPlan.selectedClassCount} missed)`}
+                        label={`After bunks (${data.overallWholeDayPlan.selectedClassCount} missed)`}
                         percentage={data.overallWholeDayPlan.afterSelectedPercentage}
                         healthy={data.overallWholeDayPlan.afterSelectedPercentage >= 75}
                       />
@@ -489,20 +483,20 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           display: "grid",
                           gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                           gap: 10,
-                          color: "#334155",
+                          color: "var(--text-secondary)",
                           fontSize: 14,
                         }}
                       >
                         <Metric
-                          label="After Selected"
+                          label="After"
                           value={`${data.overallWholeDayPlan.afterSelectedPresent}/${data.overallWholeDayPlan.afterSelectedTotal}`}
                         />
                         <Metric
-                          label="Classes Missed"
+                          label="Missed"
                           value={String(data.overallWholeDayPlan.selectedClassCount)}
                         />
                         <Metric
-                          label="Classes Attended"
+                          label="Attended"
                           value={String(data.overallWholeDayPlan.attendedClassCount)}
                         />
                       </div>
@@ -522,15 +516,11 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                     >
                       {data.wholeDayPlanSummaries.map((subject) => (
                         <div
-                          className="surface-card rise-in"
+                          className="standard-card rise-in"
                           key={`whole-day-${subject.id}`}
                           style={{
                             display: "grid",
                             gap: 10,
-                            padding: 16,
-                            borderRadius: 18,
-                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                            background: "#fff",
                           }}
                         >
                           <div
@@ -544,14 +534,17 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           >
                             <div>
                               <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                              <div style={{ color: "#64748b", fontSize: 13 }}>
+                              <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                                 {subject.courseCode} - {subject.componentName}
                               </div>
                             </div>
                             <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
                               <strong
                                 style={{
-                                  color: subject.currentPercentage >= 75 ? "#166534" : "#b91c1c",
+                                  color:
+                                    subject.currentPercentage >= 75
+                                      ? "var(--success)"
+                                      : "var(--danger)",
                                 }}
                               >
                                 Current: {subject.currentPercentage.toFixed(1)}%
@@ -559,12 +552,14 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                               <span
                                 style={{
                                   color:
-                                    subject.afterSelectedPercentage >= 75 ? "#166534" : "#b91c1c",
+                                    subject.afterSelectedPercentage >= 75
+                                      ? "var(--success)"
+                                      : "var(--danger)",
                                   fontWeight: 700,
                                   fontSize: 13,
                                 }}
                               >
-                                After selected days: {subject.afterSelectedPercentage.toFixed(1)}%
+                                After bunks: {subject.afterSelectedPercentage.toFixed(1)}%
                               </span>
                             </div>
                           </div>
@@ -575,7 +570,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                             healthy={subject.currentPercentage >= 75}
                           />
                           <ProgressBar
-                            label={`After selected days (${subject.selectedClassCount} missed)`}
+                            label={`After bunks (${subject.selectedClassCount} missed)`}
                             percentage={subject.afterSelectedPercentage}
                             healthy={subject.afterSelectedPercentage >= 75}
                           />
@@ -585,20 +580,20 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                               display: "grid",
                               gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                               gap: 10,
-                              color: "#334155",
+                              color: "var(--text-secondary)",
                               fontSize: 14,
                             }}
                           >
                             <Metric
-                              label="After Selected"
+                              label="After"
                               value={`${subject.afterSelectedPresent}/${subject.afterSelectedTotal}`}
                             />
                             <Metric
-                              label="Classes Missed"
+                              label="Missed"
                               value={String(subject.selectedClassCount)}
                             />
                             <Metric
-                              label="Classes Attended"
+                              label="Attended"
                               value={String(subject.attendedClassCount)}
                             />
                           </div>
@@ -621,14 +616,14 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
       <section style={{ display: "grid", gap: 14 }}>
         <Panel
           title="Leave Rescue"
-          subtitle="Find the best days to fix your attendance. Uses the last 4 weeks of already-fetched attendance history."
+          subtitle="Find the best days to recover your attendance."
         >
           {data.streakLoading ? (
-            <EmptyMessage message="Loading last 4 weeks of attendance..." />
+            <EmptyMessage message="Loading recent attendance..." />
           ) : !data.streakIsReliable ? (
-            <EmptyMessage message="Recent attendance history is not available right now." />
+            <EmptyMessage message="Recent attendance is not available right now." />
           ) : leaveRescueDays.length === 0 ? (
-            <EmptyMessage message="No missed classes in last 4 weeks 🎉" />
+            <EmptyMessage message="No missed classes in the last 4 weeks." />
           ) : (
             <div style={{ display: "grid", gap: 18 }}>
               <div
@@ -639,17 +634,14 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ color: "#5f6f69", fontSize: 14, maxWidth: "72ch" }}>
-                  Best days are ranked by missed classes from the existing streak dataset. No new
-                  requests, no recomputation of attendance history.
+                <div style={{ color: "var(--text-secondary)", fontSize: 14, maxWidth: "72ch" }}>
+                  Turn missed days into recovery opportunities.
                 </div>
                 <div
+                  className="status-badge status-badge--neutral"
                   style={{
                     padding: "8px 12px",
                     borderRadius: 999,
-                    background: "#f8fafc",
-                    border: "1px solid rgba(15, 23, 42, 0.08)",
-                    color: "#334155",
                     fontSize: 13,
                     fontWeight: 700,
                   }}
@@ -658,12 +650,10 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                 </div>
                 {selectedLeaveRescueDays.length > 0 && (
                   <div
+                    className="status-badge status-badge--info"
                     style={{
                       padding: "8px 12px",
                       borderRadius: 999,
-                      background: "#dbeafe",
-                      border: "1px solid rgba(37, 99, 235, 0.18)",
-                      color: "#1d4ed8",
                       fontSize: 13,
                       fontWeight: 700,
                     }}
@@ -687,22 +677,18 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                   return (
                     <button
                       type="button"
-                      className="surface-card rise-in"
+                      className={`standard-card interactive-row rise-in ${theme.borderClass}`}
                       key={`leave-rescue-featured-${day.dateKey}`}
                       onClick={() => handleLeaveRescueToggle(day.dateKey)}
                       style={{
                         display: "grid",
                         gap: 10,
-                        padding: 18,
-                        borderRadius: 18,
-                        border: isSelected ? "2px solid #2563eb" : theme.border,
-                        background: isSelected
-                          ? "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)"
-                          : theme.background,
                         width: "100%",
                         textAlign: "left",
                         cursor: "pointer",
                         font: "inherit",
+                        background: isSelected ? "var(--primary-soft)" : undefined,
+                        borderColor: isSelected ? "var(--primary)" : undefined,
                       }}
                     >
                       <div
@@ -712,19 +698,22 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           alignItems: "start",
                           flexWrap: "wrap",
                         }}
-                      >
+                        >
                         <div style={{ display: "grid", gap: 4 }}>
                           <strong style={{ fontSize: 18 }}>{day.label}</strong>
-                          <span style={{ color: "#475569", fontSize: 13 }}>{day.dateKey}</span>
+                          <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                            {day.dateKey}
+                          </span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }}>
                           {isSelected && (
                             <span
+                              className="status-badge"
                               style={{
                                 padding: "6px 10px",
                                 borderRadius: 999,
-                                background: "#2563eb",
-                                color: "#fff",
+                                background: "var(--primary)",
+                                color: "var(--text-on-primary)",
                                 fontSize: 12,
                                 fontWeight: 800,
                               }}
@@ -732,25 +721,26 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                               Selected
                             </span>
                           )}
-                          <span
-                            style={{
-                              padding: "6px 10px",
-                              borderRadius: 999,
-                              background: "rgba(255, 255, 255, 0.72)",
-                              color: theme.color,
-                              fontSize: 12,
-                              fontWeight: 800,
-                            }}
-                          >
-                            {theme.icon} {theme.label}
-                          </span>
+                            <span
+                              className={`status-badge ${day.intensity === "high" ? "status-badge--danger" : day.intensity === "medium" ? "status-badge--warning" : "status-badge--success"}`}
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: 999,
+                                background: theme.badgeBackground,
+                                color: theme.color,
+                                fontSize: 12,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {theme.label}
+                            </span>
                         </div>
                       </div>
 
-                      <div style={{ color: "#0f172a", fontSize: 24, fontWeight: 800 }}>
-                        Missed {day.missed} / {day.total}
+                      <div style={{ color: "var(--text-primary)", fontSize: 24, fontWeight: 800 }}>
+                        Missed {day.missed} of {day.total}
                       </div>
-                      <div style={{ color: "#475569", fontSize: 14 }}>
+                      <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                         Attended {day.attended} class{day.attended === 1 ? "" : "es"}
                       </div>
                     </button>
@@ -760,7 +750,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
 
               {extraLeaveRescueDays.length > 0 && (
                 <div style={{ display: "grid", gap: 10 }}>
-                  <div style={{ fontWeight: 700, color: "#0f172a" }}>More days worth checking</div>
+                  <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>More recovery days</div>
                   <div style={{ display: "grid", gap: 8 }}>
                     {extraLeaveRescueDays.map((day) => {
                       const theme = getLeaveRescueTheme(day.intensity);
@@ -769,24 +759,19 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                       return (
                         <button
                           type="button"
-                          className="surface-card"
+                          className={`standard-card interactive-row ${theme.borderClass}`}
                           key={`leave-rescue-extra-${day.dateKey}`}
                           onClick={() => handleLeaveRescueToggle(day.dateKey)}
                           style={{
                             display: "flex",
                             gap: 12,
                             alignItems: "center",
-                            padding: 14,
-                            borderRadius: 16,
-                            border: isSelected
-                              ? "2px solid #2563eb"
-                              : "1px solid rgba(15, 23, 42, 0.08)",
-                            background: isSelected ? "#eff6ff" : "#fff",
-                            flexWrap: "wrap",
                             width: "100%",
                             textAlign: "left",
                             cursor: "pointer",
                             font: "inherit",
+                            background: isSelected ? "var(--primary-soft)" : undefined,
+                            borderColor: isSelected ? "var(--primary)" : undefined,
                           }}
                         >
                           <div
@@ -802,7 +787,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                             </strong>
                             <span
                               style={{
-                                color: "#64748b",
+                                color: "var(--text-muted)",
                                 fontSize: 13,
                                 whiteSpace: "nowrap",
                                 wordBreak: "normal",
@@ -817,22 +802,25 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                               gap: 10,
                               alignItems: "center",
                               justifyContent: "flex-end",
-                              color: "#334155",
+                              color: "var(--text-secondary)",
                               fontWeight: 700,
                               flexWrap: "wrap",
                               marginLeft: "auto",
                             }}
                           >
                             {isSelected && (
-                              <span style={{ color: "#1d4ed8" }}>
-                                ✓ Selected
+                              <span className="status-badge status-badge--info">
+                                Selected
                               </span>
                             )}
-                            <span style={{ color: theme.color }}>
-                              {theme.icon} {theme.label}
+                            <span
+                              className={`status-badge ${day.intensity === "high" ? "status-badge--danger" : day.intensity === "medium" ? "status-badge--warning" : "status-badge--success"}`}
+                              style={{ color: theme.color }}
+                            >
+                              {theme.label}
                             </span>
                             <span>
-                              Missed {day.missed} / {day.total}
+                              Missed {day.missed} of {day.total}
                             </span>
                           </div>
                         </button>
@@ -849,8 +837,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                   gap: 16,
                   padding: 18,
                   borderRadius: 18,
-                  border: "1px solid rgba(59, 130, 246, 0.18)",
-                  background: "linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%)",
+                  border: "1px solid var(--border-strong)",
+                  background: "var(--bg-card-subtle)",
                 }}
               >
                 <div
@@ -862,10 +850,10 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                   }}
                 >
                   <div style={{ display: "grid", gap: 4 }}>
-                    <div style={{ fontWeight: 800, fontSize: 18 }}>Impact if medical applied</div>
-                    <div style={{ color: "#64748b", fontSize: 13 }}>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>Recovery preview</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                       {selectedLeaveRescueDays.length === 0
-                        ? "Select one or more days to preview the attendance lift."
+                        ? "Select days to preview the lift."
                         : selectedLeaveRescueDays.map((day) => day.label).join(", ")}
                     </div>
                   </div>
@@ -879,21 +867,21 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                         marginLeft: "auto",
                       }}
                     >
-                      Clear selection
+                      Clear
                     </button>
                   )}
                 </div>
 
                 {selectedLeaveRescueDays.length === 0 ? (
-                  <EmptyMessage message="Select one or more days to simulate medical impact." />
+                  <EmptyMessage message="Select days to preview the impact." />
                 ) : !leaveRescueImpact || !data.overallSummary ? (
-                  <EmptyMessage message="Impact preview is not available right now." />
+                  <EmptyMessage message="Preview is not available right now." />
                 ) : leaveRescueImpact.addedPresent === 0 ? (
-                  <EmptyMessage message="No ABSENT classes were found on the selected days." />
+                  <EmptyMessage message="No absences found on those days." />
                 ) : (
                   <div style={{ display: "grid", gap: 16 }}>
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div style={{ fontWeight: 700, color: "#0f172a" }}>📊 Overall Improvement</div>
+                      <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>Overall impact</div>
                       <div
                         style={{
                           display: "grid",
@@ -906,15 +894,15 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           value={`${formatPercentage(leaveRescueImpact.oldPercentage)} -> ${formatPercentage(leaveRescueImpact.newPercentage)}`}
                         />
                         <Metric
-                          label="Recovered Classes"
+                          label="Recovered"
                           value={String(leaveRescueImpact.addedPresent)}
                         />
                         <Metric
-                          label="Present Count"
+                          label="Present"
                           value={`${leaveRescueImpact.oldPresent} -> ${leaveRescueImpact.newPresent}`}
                         />
                         <Metric
-                          label="Subjects Safe"
+                          label="Safe now"
                           value={String(leaveRescueImpact.crossesThresholdCount)}
                         />
                       </div>
@@ -929,17 +917,16 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                           flexWrap: "wrap",
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: "#0f172a" }}>📘 Subject Breakdown</div>
-                        <span style={{ color: "#64748b", fontSize: 13 }}>
+                        <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>Subject impact</div>
+                        <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
                           {leaveRescueImpact.unchangedSubjectsCount} unchanged
                         </span>
                         {leaveRescueImpact.stillRiskyCount > 0 && (
                           <span
+                            className="status-badge status-badge--warning"
                             style={{
                               padding: "6px 10px",
                               borderRadius: 999,
-                              background: "#fef3c7",
-                              color: "#92400e",
                               fontSize: 12,
                               fontWeight: 800,
                             }}
@@ -950,7 +937,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                       </div>
 
                       {leaveRescueImpact.impactedSubjects.length === 0 ? (
-                        <EmptyMessage message="No subject-level changes were found for the selected days." />
+                        <EmptyMessage message="No subject changes for those days." />
                       ) : (
                         <div
                           style={{
@@ -964,7 +951,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
 
                             return (
                               <div
-                                className="surface-card rise-in"
+                                className={`surface-card interactive-row rise-in ${impactTheme.borderClass}`}
                                 key={`leave-rescue-impact-${subject.id}`}
                                 style={{
                                   display: "grid",
@@ -974,10 +961,10 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                                   border: impactTheme.border,
                                   background: impactTheme.background,
                                 }}
-                              >
+                                >
                                 <div style={{ display: "grid", gap: 4 }}>
                                   <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                                  <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                                     {subject.courseCode} - {subject.componentName}
                                   </div>
                                 </div>
@@ -990,26 +977,29 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                                     flexWrap: "wrap",
                                   }}
                                 >
-                                  <span style={{ color: "#0f172a", fontSize: 20, fontWeight: 800 }}>
+                                  <span
+                                    style={{ color: "var(--text-primary)", fontSize: 20, fontWeight: 800 }}
+                                  >
                                     {formatPercentage(subject.oldPercentage)}
                                     {" -> "}
                                     {formatPercentage(subject.newPercentage)}
                                   </span>
                                   <span
+                                    className={`status-badge ${subject.crossesThreshold ? "status-badge--success" : subject.stillRisky ? "status-badge--warning" : "status-badge--info"}`}
                                     style={{
                                       padding: "6px 10px",
                                       borderRadius: 999,
-                                      background: "rgba(255, 255, 255, 0.72)",
+                                      background: impactTheme.badgeBackground,
                                       color: impactTheme.color,
                                       fontSize: 12,
                                       fontWeight: 800,
                                     }}
-                                  >
-                                    {impactTheme.icon} {impactTheme.label}
-                                  </span>
-                                </div>
+                                >
+                                  {impactTheme.label}
+                                </span>
+                              </div>
 
-                                <div style={{ color: "#475569", fontSize: 14 }}>
+                                <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                                   Present {subject.oldPresent}/{subject.total}
                                   {" -> "}
                                   {subject.newPresent}/{subject.total}

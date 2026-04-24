@@ -21,7 +21,7 @@ export function Contribute() {
       
       // Validation: PDF only
       if (selectedFile.type !== 'application/pdf') {
-        setError('Only PDF files are allowed.');
+        setError('Only PDF files are supported.');
         setFile(null);
         e.target.value = ''; // Reset input
         return;
@@ -29,7 +29,7 @@ export function Contribute() {
       
       // Validation: Max 40 MB
       if (selectedFile.size > 40 * 1024 * 1024) {
-        setError('File size must be under 40 MB.');
+        setError('Keep the file under 40 MB.');
         setFile(null);
         e.target.value = ''; // Reset input
         return;
@@ -43,7 +43,7 @@ export function Contribute() {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject || !title || !file) {
-      setError('Please fill all required fields and select a PDF file.');
+      setError('Add the basics and choose a PDF to continue.');
       return;
     }
 
@@ -80,7 +80,7 @@ export function Contribute() {
 
       if (dbError) throw dbError;
 
-      setSuccess('Thank you! Your notes have been submitted and are pending admin approval.');
+      setSuccess('Sent for review. Thanks for helping everyone study smarter.');
       setSubject('');
       setTitle('');
       setYear('');
@@ -88,7 +88,7 @@ export function Contribute() {
       // Reset file input is handled by React state unbinding in standard form resets, 
       // but to be perfectly safe, we would use a ref. Here resetting state is fine.
     } catch (err: any) {
-      setError(err.message || 'An error occurred during upload.');
+      setError(err.message || 'Couldn\'t upload the file. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export function Contribute() {
   const inputStyle = {
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '1px solid rgba(15, 23, 42, 0.1)',
+    border: '1px solid var(--border)',
     fontSize: '14px',
     width: '100%',
     boxSizing: 'border-box' as const,
@@ -108,25 +108,26 @@ export function Contribute() {
     <section style={{ display: 'grid', gap: 14, maxWidth: '800px', margin: '0 auto' }}>
       <button 
         onClick={() => navigate('/exam')}
-        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', textAlign: 'left', padding: 0, fontWeight: 600 }}
+        className="page-back-link"
+        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', padding: 0, fontWeight: 600 }}
       >
-        ← Back to Exam Mode
+        Back to exam resources
       </button>
 
-      <Panel title="Contribute Notes 🚀" subtitle="Help your classmates by uploading your study materials.">
+      <Panel title="Share a resource" subtitle="Upload notes, PYQs, or useful revision material.">
         <form onSubmit={handleUpload} style={{ display: 'grid', gap: '20px', padding: '10px 0' }}>
           
-          {error && <div style={{ padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: '10px', fontSize: '14px' }}>{error}</div>}
-          {success && <div style={{ padding: '12px', background: '#dcfce7', color: '#166534', borderRadius: '10px', fontSize: '14px' }}>{success}</div>}
+          {error && <div className="notice-banner" style={{ padding: '12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: '10px', fontSize: '14px' }}>{error}</div>}
+          {success && <div className="notice-banner" style={{ padding: '12px', background: 'var(--success-soft)', color: 'var(--success)', borderRadius: '10px', fontSize: '14px' }}>{success}</div>}
 
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 200px', display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Subject Code / Name *</label>
-              <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. EC or Environmental Chemistry" style={inputStyle} required />
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Subject *</label>
+              <input className="standard-input" type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. CO or Compiler Design" style={inputStyle} required />
             </div>
             <div style={{ flex: '1 1 200px', display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Type *</label>
-              <select value={type} onChange={e => setType(e.target.value)} style={inputStyle}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Type *</label>
+              <select className="standard-input" value={type} onChange={e => setType(e.target.value)} style={inputStyle}>
                 <option value="notes">Notes</option>
                 <option value="pyq">PYQs</option>
                 <option value="important">Important Topics</option>
@@ -137,17 +138,17 @@ export function Contribute() {
 
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: '2 1 300px', display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Title *</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 2 Full Notes" style={inputStyle} required />
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Title *</label>
+              <input className="standard-input" type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 2 Full Notes" style={inputStyle} required />
             </div>
             <div style={{ flex: '1 1 100px', display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Year (Optional)</label>
-              <input type="number" value={year} onChange={e => setYear(e.target.value)} placeholder="e.g. 2023" style={inputStyle} />
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Year (optional)</label>
+              <input className="standard-input" type="number" value={year} onChange={e => setYear(e.target.value)} placeholder="e.g. 2023" style={inputStyle} />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Select PDF File *</label>
+          <div className="standard-card" style={{ display: 'grid', gap: '6px', padding: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>PDF file *</label>
             <input 
               type="file" 
               accept=".pdf"
@@ -155,29 +156,20 @@ export function Contribute() {
               style={{ fontSize: '14px' }} 
             />
             {file && file.size > 15 * 1024 * 1024 && (
-              <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#ca8a04', fontWeight: 600 }}>
-                ⚠️ Large files ({'>'}15MB) may upload slowly. Please compress if possible.
+              <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: 'var(--warning)', fontWeight: 600 }}>
+                Large files ({'>'}15MB) may upload slowly. Compress it if you can.
               </p>
             )}
-            <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#64748b' }}>Max file size: 40 MB. PDF only.</p>
+            <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>PDF only, up to 40 MB.</p>
           </div>
 
           <button 
             type="submit" 
             disabled={loading || !file}
-            style={{
-              padding: '14px 24px',
-              borderRadius: '12px',
-              border: 'none',
-              background: loading || !file ? '#cbd5e1' : '#2563eb',
-              color: '#fff',
-              fontSize: '15px',
-              fontWeight: 700,
-              cursor: loading || !file ? 'not-allowed' : 'pointer',
-              marginTop: '10px'
-            }}
+            className="action-button action-button--primary"
+            style={{ marginTop: '10px' }}
           >
-            {loading ? 'Uploading...' : 'Submit for Approval'}
+            {loading ? 'Uploading...' : 'Send for review'}
           </button>
 
         </form>

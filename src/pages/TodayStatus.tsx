@@ -3,7 +3,7 @@ import { callExtension } from "../utils/bridge";
 import { getWeekRange, parseKietDateTime, formatIsoDate } from "../utils/date";
 import type { StudentContext } from "../App";
 import type { StudentDetails, ScheduleEntry, DatewiseAttendanceBucket } from "../types/kiet";
-import { Notice, StatusCard, primaryButtonStyle, secondaryButtonStyle } from "../App";
+import { Notice, StatusCard, secondaryButtonStyle } from "../App";
 import { Panel } from "../components/UI";
 import { formatScheduleTime } from "../utils/date";
 
@@ -188,7 +188,9 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
   if (!attendance || !studentContext) {
     return (
       <div style={{ padding: 24, textAlign: "center" }}>
-        <Notice tone="#991b1b" background="#fee2e2">Please connect to KIET ERP and wait for data to load on the dashboard first.</Notice>
+        <Notice tone="var(--danger)" background="var(--danger-soft)">
+          Connect KIET on the dashboard first.
+        </Notice>
       </div>
     );
   }
@@ -201,7 +203,14 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
   return (
     <div className="rise-in" style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "#0f172a" }}>📅 Today Status</h1>
+        <div style={{ display: "grid", gap: 4 }}>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "var(--text-primary)" }}>
+            Today's attendance overview
+          </h1>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 15 }}>
+            Check what's marked and what's missing.
+          </p>
+        </div>
         <button 
            className="action-button action-button--secondary"
            onClick={() => fetchTodayData(true)}
@@ -213,13 +222,13 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       </div>
 
       {scheduleError && (
-        <Notice tone="#991b1b" background="#fee2e2">{scheduleError}</Notice>
+        <Notice tone="var(--danger)" background="var(--danger-soft)">{scheduleError}</Notice>
       )}
 
       {!isLoadingSchedule && totalClasses === 0 && !scheduleError && (
-        <Panel title="No Classes" subtitle="You have no classes scheduled for today.">
-          <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 16 }}>
-            Enjoy your free day! 🎉
+        <Panel title="No classes today" subtitle="Nothing is scheduled for today.">
+          <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: 16 }}>
+            You're all clear for today.
           </div>
         </Panel>
       )}
@@ -227,66 +236,98 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       {totalClasses > 0 && (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-            <StatusCard title="Total Classes" value={String(totalClasses)} tone="#0f172a" />
-            <StatusCard title="Present" value={String(presentCount)} tone="#166534" />
-            <StatusCard title="Absent" value={String(absentCount)} tone="#991b1b" />
-            <StatusCard title="Not Marked" value={String(notMarkedCount)} tone="#ca8a04" />
+            <StatusCard title="Classes" value={String(totalClasses)} tone="var(--text-primary)" />
+            <StatusCard title="Present" value={String(presentCount)} tone="var(--success)" />
+            <StatusCard title="Absent" value={String(absentCount)} tone="var(--danger)" />
+            <StatusCard title="Not marked" value={String(notMarkedCount)} tone="var(--warning)" />
           </div>
 
           {(absentCount > 0 || notMarkedCount > 0) && (
-            <div style={{ padding: 16, borderRadius: 16, background: absentCount > 0 ? "#fee2e2" : "#fef9c3", border: `1px solid ${absentCount > 0 ? '#fca5a5' : '#fde047'}` }}>
-              <h3 style={{ margin: "0 0 8px 0", color: absentCount > 0 ? "#991b1b" : "#854d0e", fontSize: 16 }}>⚠️ Issues</h3>
-              <ul style={{ margin: 0, paddingLeft: 20, color: absentCount > 0 ? "#991b1b" : "#854d0e" }}>
+            <div className={`standard-card ${absentCount > 0 ? 'border-l-danger' : 'border-l-warning'}`} style={{ padding: 16 }}>
+              <h3 style={{ margin: "0 0 8px 0", color: absentCount > 0 ? "var(--danger)" : "var(--warning)", fontSize: 16 }}>Needs attention</h3>
+              <ul style={{ margin: 0, paddingLeft: 20, color: absentCount > 0 ? "var(--danger)" : "var(--warning)" }}>
                 {absentCount > 0 && <li>{absentCount} class{absentCount > 1 ? "es" : ""} marked absent.</li>}
                 {notMarkedCount > 0 && <li>{notMarkedCount} class{notMarkedCount > 1 ? "es" : ""} not yet marked.</li>}
               </ul>
             </div>
           )}
 
-          <Panel title="Class List" subtitle="Attendance status for each of your classes today.">
+          <Panel title="Today's classes" subtitle="See what is marked for each class.">
             <div style={{ display: "grid", gap: 12 }}>
               {todayClasses.map((tc, idx) => {
-                 let statusDisplay = "⏳ Not Marked";
-                 let statusTheme = { background: "#fef9c3", color: "#854d0e" };
+                 let statusDisplay = "Not marked";
+                 let statusTheme = {
+                   background: "var(--warning-soft)",
+                   color: "var(--warning)",
+                 };
                  
                  const currentStatus = String(tc.attendanceStatus).toUpperCase();
 
-                 if (tc.isLoading) {
-                    statusDisplay = "Fetching...";
-                    statusTheme = { background: "#e2e8f0", color: "#475569" };
+              if (tc.isLoading) {
+                    statusDisplay = "Loading";
+                    statusTheme = {
+                      background: "var(--secondary-soft)",
+                      color: "var(--secondary)",
+                    };
                  } else if (tc.error) {
-                    statusDisplay = "Error fetching";
-                    statusTheme = { background: "#fee2e2", color: "#991b1b" };
+                    statusDisplay = "Couldn't load";
+                    statusTheme = {
+                      background: "var(--danger-soft)",
+                      color: "var(--danger)",
+                    };
                  } else if (currentStatus === "PRESENT") {
-                    statusDisplay = "✔ Present";
-                    statusTheme = { background: "#dcfce7", color: "#166534" };
+                    statusDisplay = "Present";
+                    statusTheme = {
+                      background: "var(--success-soft)",
+                      color: "var(--success)",
+                    };
                  } else if (currentStatus === "ABSENT") {
-                    statusDisplay = "❌ Absent";
-                    statusTheme = { background: "#fee2e2", color: "#991b1b" };
+                    statusDisplay = "Absent";
+                    statusTheme = {
+                      background: "var(--danger-soft)",
+                      color: "var(--danger)",
+                    };
                  } else if (!tc.courseId || !tc.courseComponentId) {
-                    statusDisplay = "Not Available";
-                    statusTheme = { background: "#e2e8f0", color: "#475569" };
+                    statusDisplay = "Unavailable";
+                    statusTheme = {
+                      background: "var(--secondary-soft)",
+                      color: "var(--secondary)",
+                    };
                  }
 
+                 const statusBadgeClass = tc.isLoading
+                   ? "status-badge status-badge--neutral"
+                   : tc.error
+                     ? "status-badge status-badge--danger"
+                     : currentStatus === "PRESENT"
+                       ? "status-badge status-badge--success"
+                       : currentStatus === "ABSENT"
+                         ? "status-badge status-badge--danger"
+                         : !tc.courseId || !tc.courseComponentId
+                           ? "status-badge status-badge--neutral"
+                           : "status-badge status-badge--warning";
+
                  return (
-                   <div key={idx} style={{ 
+                   <div key={idx} className="standard-card interactive-row" style={{ 
                      display: "flex", 
                      justifyContent: "space-between", 
                      alignItems: "center",
-                     padding: 16,
-                     borderRadius: 16,
-                     border: "1px solid rgba(15, 23, 42, 0.08)",
-                     background: "#fff",
                      flexWrap: "wrap",
                      gap: 12
                    }}>
                      <div style={{ display: "grid", gap: 4 }}>
-                       <div style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>{tc.entry.courseName || tc.entry.title}</div>
-                       <div style={{ fontSize: 14, color: "#64748b" }}>
-                         {formatScheduleTime(tc.entry.start)} - {formatScheduleTime(tc.entry.end)} • {tc.entry.courseCode} - {tc.entry.courseCompName}
+                       <div
+                         style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}
+                       >
+                         {tc.entry.courseName || tc.entry.title}
+                       </div>
+                       <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
+                          {formatScheduleTime(tc.entry.start)} - {formatScheduleTime(tc.entry.end)} - {tc.entry.courseCode} - {tc.entry.courseCompName}
                        </div>
                      </div>
-                     <div style={{
+                     <div
+                        className={statusBadgeClass}
+                        style={{
                         padding: "6px 12px",
                         borderRadius: 999,
                         background: statusTheme.background,
@@ -294,7 +335,8 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
                         fontWeight: 700,
                         fontSize: 14,
                         whiteSpace: "nowrap"
-                     }}>
+                     }}
+                     >
                        {statusDisplay}
                      </div>
                    </div>

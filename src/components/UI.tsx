@@ -17,17 +17,17 @@ export function Panel({
       style={{
         padding: 20,
         borderRadius: 28,
-        background: "rgba(255, 255, 255, 0.90)",
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        boxShadow: "0 24px 70px rgba(15, 23, 42, 0.08)",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
       }}
     >
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+      <div className="panel-header" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
         <div style={{ minWidth: 0 }}>
           <h2 className="panel-title" style={{ margin: "0 0 6px", fontSize: 22 }}>
             {title}
           </h2>
-          <p className="panel-subtitle" style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
+          <p className="panel-subtitle" style={{ margin: 0, color: "var(--text-muted)", fontSize: 14 }}>
             {subtitle}
           </p>
         </div>
@@ -45,9 +45,9 @@ export function EmptyMessage({ message }: { message: string }) {
       style={{
         padding: 18,
         borderRadius: 22,
-        border: "1px dashed rgba(100, 116, 139, 0.5)",
-        color: "#64748b",
-        background: "rgba(248, 250, 252, 0.85)",
+        border: "1px dashed var(--border-strong)",
+        color: "var(--text-muted)",
+        background: "var(--bg-card-subtle)",
       }}
     >
       {message}

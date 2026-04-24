@@ -9,12 +9,12 @@ const PUBLIC_KEY = "my0XXtzejINkKbVI_";
 const inputStyle = {
   padding: "10px 14px",
   borderRadius: 10,
-  border: "1.5px solid #cbd5e1",
+  border: "1px solid var(--border)",
   fontSize: 15,
   width: "100%",
-  background: "#ffffff",
+  background: "var(--bg-card)",
   outline: "none",
-  color: "#0f172a",
+  color: "var(--text-primary)",
   fontWeight: 500,
   fontFamily: "inherit",
   boxSizing: "border-box" as const,
@@ -28,7 +28,7 @@ export function Snitch() {
 
   async function handleSend() {
     if (!issueType || !message.trim()) {
-      alert("Please fill in the issue type and message.");
+      alert("Select an issue type and describe what happened.");
       return;
     }
 
@@ -40,13 +40,13 @@ export function Snitch() {
         { type: issueType, message, user_email: email },
         PUBLIC_KEY,
       );
-      alert("Got it. Fix incoming... 🔧");
+      alert("Thanks. Your report has been sent.");
       setIssueType("");
       setMessage("");
       setEmail("");
     } catch (err) {
       console.error("Failed to send feedback:", err);
-      alert("Even this broke 🤣 Try again.");
+      alert("Couldn't send the report. Please try again.");
     } finally {
       setSending(false);
     }
@@ -55,47 +55,45 @@ export function Snitch() {
   return (
     <section style={{ display: "grid", gap: 14 }}>
       <Panel
-        title="🔔 Snitch Box"
-        subtitle="Something broke? Attendance messed up? Spill it here — I'll fix it faster than your teacher marks attendance 🔧 Or just drop a message — I'm always listening 👀"
+        title="Report attendance issues"
+        subtitle="Something wrong with today's attendance? Let me know."
       >
         <div
-          className="surface-card surface-card--highlight rise-in"
+          className="standard-card rise-in border-l-warning"
           style={{
             display: "grid",
             gap: 18,
-            padding: 22,
-            borderRadius: 22,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            background: "linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94))",
           }}
         >
           {/* Issue Type */}
           <div style={{ display: "grid", gap: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>
-              Issue Type
+            <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>
+              Issue type
             </label>
             <select
+              className="standard-input"
               value={issueType}
               onChange={(e) => setIssueType(e.target.value)}
               style={inputStyle}
             >
               <option value="" disabled>Pick one</option>
-              <option value="app-broke">💥 App broke</option>
-              <option value="attendance-messed-up">📊 Attendance messed up</option>
-              <option value="idea">💡 I have an idea</option>
-              <option value="weird">🤔 Something weird happened</option>
+              <option value="app-broke">App issue</option>
+              <option value="attendance-messed-up">Attendance issue</option>
+              <option value="idea">Idea</option>
+              <option value="weird">Something else</option>
             </select>
           </div>
 
           {/* Message */}
           <div style={{ display: "grid", gap: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>
-              What Happened
+            <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>
+              What happened?
             </label>
             <textarea
+              className="standard-input"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="What did the teacher mess up today? 👀"
+              placeholder="Tell me what looks wrong."
               rows={7}
               style={{ ...inputStyle, resize: "vertical", minHeight: 160 }}
             />
@@ -103,10 +101,11 @@ export function Snitch() {
 
           {/* Email */}
           <div style={{ display: "grid", gap: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>
-              Email (Optional)
+            <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>
+              Email (optional)
             </label>
             <input
+              className="standard-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -128,7 +127,7 @@ export function Snitch() {
                 cursor: sending ? "not-allowed" : "pointer",
               }}
             >
-              {sending ? "Sending..." : "📢 Snitch Now 🔔"}
+              {sending ? "Sending..." : "Send report"}
             </button>
           </div>
         </div>

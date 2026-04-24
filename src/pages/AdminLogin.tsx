@@ -39,8 +39,7 @@ export function AdminLogin() {
 
   const inputStyle = {
     padding: '12px 16px',
-    borderRadius: '12px',
-    border: '1px solid rgba(15, 23, 42, 0.1)',
+    border: '1px solid var(--border)',
     fontSize: '15px',
     width: '100%',
     boxSizing: 'border-box' as const,
@@ -50,17 +49,18 @@ export function AdminLogin() {
   return (
     <section style={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
       <div style={{ width: '100%', maxWidth: '400px' }}>
-        <Panel title="Admin Access" subtitle="Secure login for content management.">
+        <Panel title="Admin access" subtitle="Sign in to manage exam resources.">
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px', padding: '16px' }}>
             {error && (
-              <div style={{ padding: '12px', borderRadius: '12px', background: '#fee2e2', color: '#991b1b', fontSize: '14px' }}>
+              <div className="notice-banner" style={{ padding: '12px', borderRadius: '12px', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: '14px' }}>
                 {error}
               </div>
             )}
             
             <div style={{ display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Email</label>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Email</label>
               <input
+                className="standard-input"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -70,8 +70,9 @@ export function AdminLogin() {
             </div>
 
             <div style={{ display: 'grid', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Password</label>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Password</label>
               <input
+                className="standard-input"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -86,7 +87,7 @@ export function AdminLogin() {
               className="action-button action-button--primary"
               style={{ padding: '14px', marginTop: '8px', opacity: loading ? 0.7 : 1 }}
             >
-              {loading ? 'Authenticating...' : 'Login to Admin Panel'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
         </Panel>

@@ -63,30 +63,23 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
   return (
     <>
       <section
-        className="hero-card rise-in"
+        className="standard-card rise-in border-l-primary"
         style={{
           display: "grid",
           gap: 18,
-          padding: 24,
-          borderRadius: 30,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(244, 250, 255, 0.76))",
-          boxShadow: "0 30px 90px rgba(15, 23, 42, 0.10)",
         }}
       >
         <span
-          className="brand-kicker"
+          className="brand-kicker status-badge status-badge--neutral"
           style={{
             width: "fit-content",
             padding: "6px 12px",
             borderRadius: 999,
-            background: "rgba(255, 255, 255, 0.74)",
-            color: "#0f3b52",
             fontSize: 13,
             fontWeight: 700,
           }}
         >
-          Bunk Helper
+          Attendance dashboard
         </span>
 
         <div style={{ display: "grid", gap: 12 }}>
@@ -94,12 +87,13 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
             className="display-title"
             style={{ margin: 0, fontSize: "clamp(2.5rem, 6vw, 4.9rem)", lineHeight: 0.95 }}
           >
-            Attendance that feels useful, not buried.
+            Attendance, simplified.
           </h1>
-          <p className="hero-copy" style={{ margin: 0, maxWidth: 760, color: "#475569", fontSize: 18 }}>
-            The extension keeps your KIET session inside the browser, then fetches attendance and
-            weekly schedule data on demand. No password storage, no token in the URL, and a
-            cleaner base for analytics.
+          <p
+            className="hero-copy"
+            style={{ margin: 0, maxWidth: 760, color: "var(--text-secondary)", fontSize: 18 }}
+          >
+            Everything you need to manage attendance in one place.
           </p>
         </div>
 
@@ -111,7 +105,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
             disabled={!data.extensionDetected}
             style={primaryButtonStyle(!data.extensionDetected)}
           >
-            Connect with KIET ERP
+            Connect KIET
           </button>
           <button
             className="action-button action-button--secondary"
@@ -119,7 +113,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
             onClick={handlers.syncDashboard}
             style={secondaryButtonStyle}
           >
-            Refresh dashboard
+            Refresh
           </button>
           <button
             className="action-button action-button--secondary"
@@ -139,28 +133,36 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
           }}
         >
           <StatusCard
-            title="Extension"
-            value={data.extensionDetected ? "Detected" : "Not detected"}
-            tone={data.extensionDetected ? "#166534" : "#991b1b"}
+            title="Connection"
+            value={data.extensionDetected ? "Ready" : "Not ready"}
+            tone={data.extensionDetected ? "var(--success)" : "var(--danger)"}
           />
           <StatusCard
-            title="Dashboard State"
-            value={data.loadState === "ready" ? "Synced" : data.loadState}
-            tone={data.loadState === "error" ? "#991b1b" : "#1d4ed8"}
+            title="Sync status"
+            value={
+              data.loadState === "ready"
+                ? "Synced"
+                : data.loadState === "loading"
+                  ? "Refreshing"
+                  : data.loadState === "error"
+                    ? "Needs attention"
+                    : "Waiting"
+            }
+            tone={data.loadState === "error" ? "var(--danger)" : "var(--info)"}
           />
           <StatusCard
-            title="Session Captured"
+            title="Last sync"
             value={formatCapturedAt(data.sessionCapturedAt)}
-            tone="#0f172a"
+            tone="var(--text-primary)"
           />
           <StatusCard
-            title="Upcoming Classes"
+            title="Up next"
             value={String(data.upcomingClasses.length)}
-            tone="#0f172a"
+            tone="var(--text-primary)"
           />
         </div>
 
-        {data.error && <Notice tone="#991b1b" background="#fee2e2">{data.error}</Notice>}
+        {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
       </section>
 
       {(!data.extensionDetected || !data.attendance) ? (
@@ -174,23 +176,27 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
               gap: 12,
             }}
           >
-            <StatusCard title="Student" value={data.attendance.fullName} tone="#0f172a" />
-            <StatusCard title="Registration" value={data.attendance.registrationNumber} tone="#0f172a" />
+            <StatusCard title="Student" value={data.attendance.fullName} tone="var(--text-primary)" />
+            <StatusCard
+              title="Registration"
+              value={data.attendance.registrationNumber}
+              tone="var(--text-primary)"
+            />
             <StatusCard
               title="Branch"
               value={`${data.attendance.branchShortName} - ${data.attendance.sectionName}`}
-              tone="#0f172a"
+              tone="var(--text-primary)"
             />
-            <StatusCard title="Semester" value={data.attendance.semesterName} tone="#0f172a" />
+            <StatusCard title="Semester" value={data.attendance.semesterName} tone="var(--text-primary)" />
           </section>
 
           <section style={{ display: "grid", gap: 20 }}>
             <Panel
-              title="Attendance Overview"
-              subtitle="Keep the attendance view wide and readable. Open the whole-day planner from the strategy page when you want to simulate bigger bunk plans."
+              title="Attendance overview"
+              subtitle="See what is safe, risky, and worth fixing first."
             >
               {data.subjectSummaries.length === 0 ? (
-                <EmptyMessage message="Sync the dashboard after connecting your KIET session to load attendance data." />
+                <EmptyMessage message="Connect KIET and refresh to load your attendance." />
               ) : (
                 <div style={{ display: "grid", gap: 16 }}>
                   <div
@@ -204,14 +210,10 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                   >
                   {data.overallSummary && (
                     <div
-                      className="surface-card surface-card--highlight rise-in"
+                      className="standard-card rise-in border-l-primary"
                       style={{
                         display: "grid",
                         gap: 10,
-                        padding: 18,
-                        borderRadius: 24,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%)",
                       }}
                     >
                       <div
@@ -224,15 +226,18 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 160 }}>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall Attendance</div>
-                          <div style={{ color: "#64748b", fontSize: 13 }}>
-                            Combined across all attendance components
+                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall attendance</div>
+                          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                            Across all subjects.
                           </div>
                         </div>
                         <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
                           <strong
                             style={{
-                              color: data.overallSummary.percentage >= 75 ? "#166534" : "#b91c1c",
+                              color:
+                                data.overallSummary.percentage >= 75
+                                  ? "var(--success)"
+                                  : "var(--danger)",
                             }}
                           >
                             Current: {data.overallSummary.percentage.toFixed(1)}%
@@ -240,23 +245,25 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                           <span
                             style={{
                               color:
-                                data.overallSummary.projectedPercentage >= 75 ? "#166534" : "#b91c1c",
+                                data.overallSummary.projectedPercentage >= 75
+                                  ? "var(--success)"
+                                  : "var(--danger)",
                               fontSize: 13,
                               fontWeight: 700,
                             }}
                           >
-                            If attended all remaining: {data.overallSummary.projectedPercentage.toFixed(1)}%
+                            If you attend the rest: {data.overallSummary.projectedPercentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
 
                       <ProgressBar
-                        label="Current overall"
+                        label="Current"
                         percentage={data.overallSummary.percentage}
                         healthy={data.overallSummary.percentage >= 75}
                       />
                       <ProgressBar
-                        label={`If attended all remaining (${data.overallSummary.upcomingCount} upcoming)`}
+                        label={`If you attend the rest (${data.overallSummary.upcomingCount} left)`}
                         percentage={data.overallSummary.projectedPercentage}
                         healthy={data.overallSummary.projectedPercentage >= 75}
                       />
@@ -266,20 +273,20 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                           display: "grid",
                           gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                           gap: 10,
-                          color: "#334155",
+                          color: "var(--text-secondary)",
                           fontSize: 14,
                         }}
                       >
                         <Metric label="Present" value={String(data.overallSummary.present)} />
                         <Metric label="Total" value={String(data.overallSummary.total)} />
                         <Metric
-                          label="Projected"
+                          label="If attended"
                           value={`${data.overallSummary.projectedPresent}/${data.overallSummary.projectedTotal}`}
                         />
-                        <Metric label="Planned" value={String(data.overallSummary.plannedBunkCount)} />
-                        <Metric label="Upcoming" value={String(data.overallSummary.upcomingCount)} />
+                        <Metric label="Selected" value={String(data.overallSummary.plannedBunkCount)} />
+                        <Metric label="Left" value={String(data.overallSummary.upcomingCount)} />
                         <Metric
-                          label="🔥 STREAK"
+                          label="Streak"
                           value={formatStreakMetricValue(data.streakResult, data.streakLoading)}
                         />
                       </div>
@@ -296,17 +303,17 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                       alignItems: "start",
                     }}
                   >
-                    {data.subjectSummaries.map((subject) => (
+                    {data.subjectSummaries.map((subject) => {
+                      const isDanger = subject.percentage < 75;
+                      const isWarning = subject.percentage >= 75 && subject.percentage < 80;
+                      const borderClass = isDanger ? "border-l-danger" : isWarning ? "border-l-warning" : "border-l-success";
+                      return (
                       <div
-                        className="surface-card rise-in"
+                        className={`standard-card rise-in ${borderClass}`}
                         key={subject.id}
                         style={{
                           display: "grid",
                           gap: 10,
-                          padding: 16,
-                          borderRadius: 22,
-                          border: "1px solid rgba(15, 23, 42, 0.08)",
-                          background: "linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 250, 252, 0.92) 100%)",
                         }}
                       >
                         <div
@@ -320,24 +327,29 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                         >
                           <div style={{ flex: 1, minWidth: 120 }}>
                             <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                            <div style={{ color: "#64748b", fontSize: 13 }}>
+                            <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                               {subject.courseCode} - {subject.componentName}
                             </div>
                           </div>
                           <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
                             <strong
-                              style={{ color: subject.percentage >= 75 ? "#166534" : "#b91c1c" }}
+                              style={{
+                                color: subject.percentage >= 75 ? "var(--success)" : "var(--danger)",
+                              }}
                             >
                               Current: {subject.percentage.toFixed(1)}%
                             </strong>
                             <span
                               style={{
-                                color: subject.projectedPercentage >= 75 ? "#166534" : "#b91c1c",
+                                color:
+                                  subject.projectedPercentage >= 75
+                                    ? "var(--success)"
+                                    : "var(--danger)",
                                 fontSize: 13,
                                 fontWeight: 700,
                               }}
                             >
-                              If attended all remaining: {subject.projectedPercentage.toFixed(1)}%
+                              If you attend the rest: {subject.projectedPercentage.toFixed(1)}%
                             </span>
                           </div>
                         </div>
@@ -348,7 +360,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                           healthy={subject.percentage >= 75}
                         />
                         <ProgressBar
-                          label={`If attended all remaining (${subject.upcomingCount} upcoming)`}
+                          label={`If you attend the rest (${subject.upcomingCount} left)`}
                           percentage={subject.projectedPercentage}
                           healthy={subject.projectedPercentage >= 75}
                         />
@@ -358,21 +370,21 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                             display: "grid",
                             gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                             gap: 10,
-                            color: "#334155",
+                            color: "var(--text-secondary)",
                             fontSize: 14,
                           }}
                         >
                           <Metric label="Present" value={String(subject.present)} />
-                          <Metric label="Extra Attendance" value={String(subject.extraAttendance)} />
-                          <Metric label="Total Classes" value={String(subject.total)} />
-                          <Metric label="Upcoming Classes" value={String(subject.upcomingCount)} />
-                          <Metric label="Planned Bunks" value={String(subject.plannedBunkCount)} />
+                          <Metric label="Extra" value={String(subject.extraAttendance)} />
+                          <Metric label="Total" value={String(subject.total)} />
+                          <Metric label="Upcoming" value={String(subject.upcomingCount)} />
+                          <Metric label="Selected" value={String(subject.plannedBunkCount)} />
                           <Metric
-                            label="Projected Present"
+                            label="If attended"
                             value={`${subject.projectedPresent}/${subject.projectedTotal}`}
                           />
-                          <Metric label="Safe Bunks" value={String(subject.safeBunks)} />
-                          <Metric label="Recovery Needed" value={String(subject.classesNeeded)} />
+                          <Metric label="Safe bunks" value={String(subject.safeBunks)} />
+                          <Metric label="Needed to 75%" value={String(subject.classesNeeded)} />
                         </div>
 
                         {subject.upcomingCount > 0 && (
@@ -383,25 +395,22 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                               onClick={() => handlers.handlePlannerToggle(subject.id)}
                               style={secondaryButtonStyle}
                             >
-                              {data.expandedPlanners.has(subject.id) ? "Hide bunk planner" : "Plan bunk"}
+                              {data.expandedPlanners.has(subject.id) ? "Hide bunk plan" : "Plan bunks"}
                             </button>
 
                             {data.expandedPlanners.has(subject.id) && (
                               <div
-                                className="surface-card surface-card--muted"
                                 style={{
                                   display: "grid",
                                   gap: 10,
                                   padding: 14,
                                   borderRadius: 16,
-                                  border: "1px dashed rgba(15, 23, 42, 0.2)",
-                                  background: "#f8fafc",
+                                  border: "1px dashed var(--border-color)",
+                                  background: "var(--bg-body)",
                                 }}
                               >
-                                <div style={{ color: "#475569", fontSize: 14 }}>
-                                  We have {subject.upcomingCount} upcoming class
-                                  {subject.upcomingCount === 1 ? "" : "es"} this week. Select the
-                                  ones you plan to bunk.
+                                <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                                  Choose the classes you may skip this week.
                                 </div>
 
                                 <div
@@ -410,8 +419,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                     gap: 10,
                                     padding: 12,
                                     borderRadius: 14,
-                                    border: "1px solid rgba(15, 23, 42, 0.08)",
-                                    background: "#fff",
+                                    border: "1px solid var(--border)",
+                                    background: "var(--bg-card)",
                                   }}
                                 >
                                   <div
@@ -422,15 +431,15 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                       alignItems: "baseline",
                                     }}
                                   >
-                                    <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                                      Attendance after selected bunks
+                                    <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                                      After selected bunks
                                     </div>
                                     <div
                                       style={{
                                         color:
                                           subject.bunkAdjustedPercentage >= 75
-                                            ? "#166534"
-                                            : "#b91c1c",
+                                            ? "var(--success)"
+                                            : "var(--danger)",
                                         fontWeight: 700,
                                       }}
                                     >
@@ -439,7 +448,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                   </div>
 
                                   <ProgressBar
-                                    label={`After bunk (${subject.plannedBunkCount} selected)`}
+                                    label={`After bunks (${subject.plannedBunkCount} selected)`}
                                     percentage={subject.bunkAdjustedPercentage}
                                     healthy={subject.bunkAdjustedPercentage >= 75}
                                   />
@@ -449,7 +458,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                       display: "grid",
                                       gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                                       gap: 10,
-                                      color: "#334155",
+                                      color: "var(--text-secondary)",
                                       fontSize: 14,
                                     }}
                                   >
@@ -458,7 +467,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                       value={`${subject.percentage.toFixed(1)}%`}
                                     />
                                     <Metric
-                                      label="After Bunk"
+                                      label="After"
                                       value={`${subject.bunkAdjustedPercentage.toFixed(1)}%`}
                                     />
                                     <Metric
@@ -466,7 +475,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                       value={formatPercentageDelta(subject.bunkImpact)}
                                     />
                                     <Metric
-                                      label="Selected Bunks"
+                                      label="Selected"
                                       value={String(subject.plannedBunkCount)}
                                     />
                                   </div>
@@ -479,19 +488,19 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
                                     return (
                                       <label
-                                        className="surface-card"
+                                        className="surface-card interactive-row"
                                         key={entryKey}
                                         style={{
                                           display: "grid",
                                           gridTemplateColumns: "20px minmax(0, 1fr)",
-                                          gap: 10,
-                                          alignItems: "start",
-                                          padding: 12,
-                                          borderRadius: 14,
-                                          border: "1px solid rgba(15, 23, 42, 0.08)",
-                                          background: isChecked ? "#fee2e2" : "#fff",
-                                        }}
-                                      >
+                                        gap: 10,
+                                        alignItems: "start",
+                                        padding: 12,
+                                        borderRadius: 14,
+                                        border: `1px solid ${isChecked ? "var(--primary)" : "var(--border)"}`,
+                                        background: isChecked ? "var(--primary-soft)" : "var(--bg-card)",
+                                      }}
+                                    >
                                         <input
                                           type="checkbox"
                                           checked={isChecked}
@@ -499,14 +508,14 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                           style={{ marginTop: 3 }}
                                         />
                                         <div style={{ display: "grid", gap: 4 }}>
-                                          <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                                          <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                                             {formatScheduleDay(entry.start)}
                                           </div>
-                                          <div style={{ color: "#475569", fontSize: 14 }}>
+                                          <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                                             {formatScheduleTime(entry.start)} -{" "}
                                             {formatScheduleTime(entry.end)}
                                           </div>
-                                          <div style={{ color: "#64748b", fontSize: 13 }}>
+                                          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                                             {entry.courseName ?? subject.title}
                                             {entry.classRoom ? ` - ${entry.classRoom}` : ""}
                                           </div>
@@ -527,26 +536,24 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                             onClick={() => handlers.handleDatewiseToggle(subject)}
                             style={secondaryButtonStyle}
                           >
-                            {data.expandedDatewise.has(subject.id)
-                              ? "Hide date-wise attendance"
-                              : "View date-wise attendance"}
+                              {data.expandedDatewise.has(subject.id)
+                                ? "Hide attendance log"
+                                : "View attendance log"}
                           </button>
 
                           {data.expandedDatewise.has(subject.id) && (
                             <div
-                              className="surface-card surface-card--muted"
                               style={{
                                 display: "grid",
                                 gap: 12,
                                 padding: 14,
                                 borderRadius: 16,
-                                border: "1px dashed rgba(15, 23, 42, 0.2)",
-                                background: "#f8fafc",
+                                border: "1px dashed var(--border-color)",
+                                background: "var(--bg-body)",
                               }}
                             >
-                              <div style={{ color: "#475569", fontSize: 14 }}>
-                                This is the official date-wise attendance mark for this subject and
-                                component.
+                              <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                                See what was marked for each class.
                               </div>
 
                               {data.datewiseLoading.has(subject.id) ? (
@@ -554,15 +561,15 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                   style={{
                                     padding: 12,
                                     borderRadius: 14,
-                                    background: "#fff",
-                                    color: "#475569",
-                                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                                    background: "var(--bg-card)",
+                                    color: "var(--text-secondary)",
+                                    border: "1px solid var(--border)",
                                   }}
                                 >
-                                  Loading date-wise attendance...
+                                  Loading attendance log...
                                 </div>
                               ) : data.datewiseErrors[subject.id] ? (
-                                <Notice tone="#991b1b" background="#fee2e2">
+                                <Notice tone="var(--danger)" background="var(--danger-soft)">
                                   {data.datewiseErrors[subject.id]}
                                 </Notice>
                               ) : data.datewiseAttendance[subject.id] ? (
@@ -574,24 +581,24 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                       gap: 10,
                                       padding: 12,
                                       borderRadius: 14,
-                                      border: "1px solid rgba(15, 23, 42, 0.08)",
-                                      background: "#fff",
+                                      border: "1px solid var(--border)",
+                                      background: "var(--bg-card)",
                                     }}
                                   >
                                     <Metric
-                                      label="Marked Present"
+                                      label="Present"
                                       value={String(data.datewiseAttendance[subject.id].presentCount)}
                                     />
                                     <Metric
-                                      label="Total Lectures"
+                                      label="Lectures"
                                       value={String(data.datewiseAttendance[subject.id].lectureCount)}
                                     />
                                     <Metric
-                                      label="Extra Attendance"
+                                      label="Extra"
                                       value={String(data.datewiseAttendance[subject.id].extraAttendance)}
                                     />
                                     <Metric
-                                      label="Effective %"
+                                      label="Effective"
                                       value={`${data.datewiseAttendance[subject.id].percent?.toFixed(1) ?? "0.0"}%`}
                                     />
                                   </div>
@@ -610,15 +617,15 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
                                       return (
                                         <div
-                                          className="surface-card"
+                                          className="surface-card interactive-row"
                                           key={`${lecture.planLecDate ?? "unknown"}-${lecture.timeSlot ?? index}-${lecture.attendance ?? "na"}`}
                                           style={{
                                             display: "grid",
                                             gap: 8,
                                             padding: 12,
                                             borderRadius: 14,
-                                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                                            background: "#fff",
+                                            border: "1px solid var(--border)",
+                                            background: "var(--bg-card)",
                                           }}
                                         >
                                           <div
@@ -631,21 +638,24 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                             }}
                                           >
                                             <div style={{ display: "grid", gap: 4 }}>
-                                              <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                                              <div
+                                                style={{ fontWeight: 700, color: "var(--text-primary)" }}
+                                              >
                                                 {formatDatewiseLectureDate(
                                                   lecture.planLecDate,
                                                   lecture.dayName,
                                                 )}
                                               </div>
-                                              <div style={{ color: "#475569", fontSize: 14 }}>
+                                              <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                                                 {lecture.timeSlot ?? "Time not available"}
                                               </div>
-                                              <div style={{ color: "#64748b", fontSize: 13 }}>
+                                              <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                                                 {lecture.lectureType ?? "Lecture type unavailable"}
                                               </div>
                                             </div>
 
                                             <span
+                                              className="status-badge"
                                               style={{
                                                 padding: "6px 10px",
                                                 borderRadius: 999,
@@ -655,7 +665,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                                 fontSize: 12,
                                               }}
                                             >
-                                              {lecture.attendance ?? "NOT MARKED"}
+                                              {lecture.attendance ?? "Not marked"}
                                             </span>
                                           </div>
 
@@ -664,8 +674,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                               style={{
                                                 padding: "10px 12px",
                                                 borderRadius: 12,
-                                                background: "#f8fafc",
-                                                color: "#475569",
+                                                background: "var(--bg-card-subtle)",
+                                                color: "var(--text-secondary)",
                                                 fontSize: 13,
                                               }}
                                             >
@@ -678,13 +688,14 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                                   </div>
                                 </>
                               ) : (
-                                <EmptyMessage message="Open this once to load the official date-wise attendance from KIET." />
+                                <EmptyMessage message="Open this to load the attendance log." />
                               )}
                             </div>
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -698,8 +709,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
           {data.upcomingClasses.length > 0 && (
             <section style={{ display: "grid", gap: 14 }}>
               <Panel
-                title="Upcoming Classes Preview"
-                subtitle="Next few classes scheduled."
+                title="Coming up"
+                subtitle="Your next few classes."
               >
                 <div
                   className="schedule-reference-grid"
@@ -711,15 +722,15 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                 >
                   {data.upcomingClasses.slice(0, 3).map((entry) => (
                     <div
-                      className="surface-card schedule-reference-card"
+                      className="surface-card schedule-reference-card interactive-row"
                       key={`${entry.courseCode ?? "holiday"}-${entry.start}-${entry.end}`}
                       style={{
                         display: "grid",
                         gap: 8,
                         padding: 14,
                         borderRadius: 18,
-                        border: "1px solid rgba(15, 23, 42, 0.08)",
-                        background: "#fff",
+                        border: "1px solid var(--border)",
+                        background: "var(--bg-card)",
                       }}
                     >
                       <div
@@ -732,16 +743,15 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                       >
                         <div style={{ display: "grid", gap: 4 }}>
                           <strong>{entry.courseName ?? entry.title}</strong>
-                          <div style={{ color: "#475569", fontSize: 14 }}>
+                          <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                             {(entry.courseCode ?? "NA") + " - " + (entry.courseCompName ?? "CLASS")}
                           </div>
                         </div>
                         <span
+                          className="status-badge status-badge--info"
                           style={{
                             padding: "6px 10px",
                             borderRadius: 999,
-                            background: "rgba(29, 78, 216, 0.08)",
-                            color: "#1d4ed8",
                             fontSize: 12,
                             fontWeight: 700,
                             whiteSpace: "nowrap",
@@ -751,12 +761,12 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                         </span>
                       </div>
 
-                      <div style={{ color: "#64748b", fontSize: 13 }}>
+                      <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                         {formatScheduleTime(entry.start)} - {formatScheduleTime(entry.end)}
                         {entry.classRoom ? ` - ${entry.classRoom}` : ""}
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 13 }}>
-                        {entry.facultyName ? `Faculty: ${entry.facultyName}` : "Faculty not listed"}
+                      <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                        {entry.facultyName ? `Faculty: ${entry.facultyName}` : "Faculty unavailable"}
                       </div>
                     </div>
                   ))}

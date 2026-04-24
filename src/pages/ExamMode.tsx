@@ -14,6 +14,19 @@ interface ExamResource {
   created_at: string;
 }
 
+function formatResourceType(type: string): string {
+  switch (type) {
+    case 'notes':
+      return 'Notes';
+    case 'pyq':
+      return 'PYQs';
+    case 'important':
+      return 'Important topics';
+    default:
+      return 'Other';
+  }
+}
+
 export function ExamMode() {
   const navigate = useNavigate();
   const [resources, setResources] = useState<ExamResource[]>([]);
@@ -80,19 +93,19 @@ export function ExamMode() {
   const selectStyle = {
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '1px solid rgba(15, 23, 42, 0.1)',
+    border: '1px solid var(--border)',
     fontSize: '14px',
-    background: '#ffffff',
+    background: 'var(--bg-card)',
     outline: 'none',
-    color: '#0f172a',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   };
 
   if (loading) {
     return (
       <section style={{ display: 'grid', gap: 14 }}>
-        <Panel title="Exam Mode 📚" subtitle="Loading resources...">
-           <div style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>Fetching materials...</div>
+        <Panel title="Exam Mode" subtitle="Loading exam resources...">
+           <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Getting everything ready...</div>
         </Panel>
       </section>
     );
@@ -101,8 +114,8 @@ export function ExamMode() {
   if (error) {
     return (
       <section style={{ display: 'grid', gap: 14 }}>
-        <Panel title="Exam Mode 📚" subtitle="Error loading resources">
-           <div style={{ padding: '24px', color: '#991b1b', background: '#fee2e2', borderRadius: '16px' }}>{error}</div>
+        <Panel title="Exam Mode" subtitle="Couldn't load resources">
+           <div className="notice-banner" style={{ padding: '24px', color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: '16px' }}>{error}</div>
         </Panel>
       </section>
     );
@@ -111,41 +124,32 @@ export function ExamMode() {
   return (
     <section style={{ display: 'grid', gap: 14 }}>
       <Panel 
-        title="Exam Mode 📚" 
-        subtitle="Access notes, PYQs, and important topics to prepare for exams."
+        title="Exam Mode" 
+        subtitle="Notes, PYQs, and key topics, organized and ready."
         headerAction={
           <button 
             onClick={() => navigate('/contribute')}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '999px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #0b3b66 0%, #0f766e 100%)',
-              color: '#fff',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(15, 118, 110, 0.2)'
-            }}
+            className="action-button action-button--primary"
+            style={{ padding: '8px 16px', fontSize: '13px' }}
           >
-            + Contribute Notes
+            Share a resource
           </button>
         }
       >
         <div style={{ display: 'grid', gap: '20px', padding: '10px 0' }}>
           
           {/* Filters */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid rgba(15,23,42,0.05)' }}>
+          <div className="surface-card" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', background: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
             <div style={{ display: 'grid', gap: '6px', flex: '1 1 200px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>Subject</label>
-              <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} style={selectStyle}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Subject</label>
+              <select className="standard-input" value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} style={selectStyle}>
                 {uniqueSubjects.map(sub => <option key={sub} value={sub}>{sub}</option>)}
               </select>
             </div>
             <div style={{ display: 'grid', gap: '6px', flex: '1 1 200px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>Type</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={selectStyle}>
-                <option value="All">All Types</option>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</label>
+              <select className="standard-input" value={filterType} onChange={(e) => setFilterType(e.target.value)} style={selectStyle}>
+                <option value="All">All types</option>
                 <option value="notes">Notes</option>
                 <option value="pyq">PYQs</option>
                 <option value="important">Important Topics</option>
@@ -156,31 +160,31 @@ export function ExamMode() {
 
           {/* Resources List */}
           {Object.keys(groupedResources).length === 0 ? (
-             <EmptyMessage message="📭 No resources found matching your filters." />
+             <EmptyMessage message="No resources match these filters." />
           ) : (
              <div style={{ display: 'grid', gap: '24px' }}>
                {Object.entries(groupedResources).sort(([a], [b]) => a.localeCompare(b)).map(([subject, items]) => (
-                 <div key={subject} className="surface-card rise-in" style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(15,23,42,0.08)' }}>
-                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+                 <div key={subject} className="standard-card rise-in border-l-primary" style={{ display: 'grid', gap: '16px' }}>
+                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '2px solid var(--border)', paddingBottom: '8px' }}>
                       {subject}
                     </h3>
                     
                     <div style={{ display: 'grid', gap: '12px' }}>
                       {items.map(resource => (
-                        <div key={resource.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid rgba(15,23,42,0.05)' }}>
+                        <div key={resource.id} className="standard-card interactive-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
                           <div>
-                            <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '15px' }}>{resource.title}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
-                              <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 600 }}>{resource.type}</span>
-                              {resource.year && <span style={{ color: '#475569', fontWeight: 500 }}>• Year: {resource.year}</span>}
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '15px' }}>{resource.title}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center' }}>
+                              <span className="status-badge status-badge--info" style={{ padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', fontWeight: 700 }}>{formatResourceType(resource.type)}</span>
+                              {resource.year && <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Year {resource.year}</span>}
                             </div>
                           </div>
                           <button 
                             onClick={() => window.open(resource.file_url, '_blank')} 
-                            className="action-button action-button--primary"
+                            className="action-button action-button--secondary"
                             style={{ padding: '8px 16px', fontSize: '13px' }}
                           >
-                            Open
+                            View
                           </button>
                         </div>
                       ))}

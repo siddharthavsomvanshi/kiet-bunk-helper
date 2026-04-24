@@ -55,53 +55,53 @@ export function RedemptionArc({ data, schedule }: RedemptionArcProps) {
         gap: 12,
         padding: "18px 20px",
         borderRadius: 22,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        background: "linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%)",
+        border: "1px solid var(--border)",
+        background: "var(--bg-card)",
       }}
     >
       <div>
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#4a044e" }}>
-          📈 Redemption Arc
+        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+          Attendance recovery
         </h2>
-        <p style={{ color: "#701a75", fontSize: 14, margin: "4px 0 0" }}>
-          Aaj se pakka padhunga mode 😇
+        <p style={{ color: "var(--text-secondary)", fontSize: 14, margin: "4px 0 0" }}>
+          See where your attendance lands if you attend every class until a selected date.
         </p>
       </div>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <input
+          className="standard-input"
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           style={{
             padding: "8px 12px",
             borderRadius: 10,
-            border: "1px solid rgba(134, 25, 143, 0.3)",
+            border: "1px solid var(--border)",
             fontSize: 14,
             outline: "none",
-            background: "#fff",
-            color: "#4a044e",
+            background: "var(--bg-card)",
+            color: "var(--text-primary)",
             fontFamily: "inherit",
           }}
         />
         <button
+          className="action-button action-button--primary"
           type="button"
           onClick={handleCalculate}
           style={{
             padding: "8.5px 18px",
             borderRadius: 10,
             border: "none",
-            background: "#86198f",
-            color: "white",
+            background: "var(--primary)",
+            color: "var(--text-on-primary)",
             fontWeight: 600,
             cursor: "pointer",
             fontSize: 14,
             transition: "all 0.2s",
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#701a75")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#86198f")}
         >
-          Calculate
+          Preview
         </button>
       </div>
 
@@ -111,20 +111,20 @@ export function RedemptionArc({ data, schedule }: RedemptionArcProps) {
             marginTop: 4,
             padding: "14px 16px",
             borderRadius: 12,
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px dashed rgba(134, 25, 143, 0.4)",
-            color: "#4a044e",
+            background: "var(--bg-card-subtle)",
+            border: "1px dashed var(--border-strong)",
+            color: "var(--text-primary)",
             fontSize: 15,
           }}
         >
-          If you attend all classes till {new Date(selectedDate).toLocaleDateString("en-IN", {
+          If you attend every class until {new Date(selectedDate).toLocaleDateString("en-IN", {
             day: "numeric",
             month: "short",
             year: "numeric",
           })}{" "}
-          → <strong style={{ fontSize: 18 }}>{result.percentage.toFixed(1)}%</strong>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-            (+{result.classesAdded} classes counted)
+          your attendance reaches <strong style={{ fontSize: 18 }}>{result.percentage.toFixed(1)}%</strong>
+          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, color: "var(--text-muted)" }}>
+            +{result.classesAdded} classes added
           </div>
         </div>
       )}
