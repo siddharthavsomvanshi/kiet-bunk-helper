@@ -86,6 +86,47 @@ export function getUpcomingClasses(entries: ScheduleEntry[]): ScheduleEntry[] {
     );
 }
 
+export function getWeeklyClasses(entries: ScheduleEntry[]): ScheduleEntry[] {
+  const seen = new Set<string>();
+
+  // 1. Identify any dates that have exams planned.
+  const examDates = new Set<string>();
+  for (const entry of entries) {
+    const isExam = [entry.title, entry.courseName, entry.type].some(
+      val => val && String(val).toLowerCase().includes("exam")
+    );
+    if (isExam) {
+      examDates.add(formatIsoDate(parseKietDateTime(entry.start)));
+    }
+  }
+
+  return entries
+    .filter((entry) => {
+      // 2. Exclude ANY event occurring on an exam date
+      const eventDate = formatIsoDate(parseKietDateTime(entry.start));
+      if (examDates.has(eventDate)) {
+        return false;
+      }
+      
+      // 3. Exclude non-class entries
+      if (entry.type !== "CLASS") return false;
+      
+      return true;
+    })
+    .filter((entry) => {
+      const key = `${entry.courseCode ?? "na"}-${entry.start}-${entry.end}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .sort(
+      (left, right) =>
+        parseKietDateTime(left.start).getTime() - parseKietDateTime(right.start).getTime(),
+    );
+}
+
 export function formatScheduleDay(value: string): string {
   return DATE_FORMATTER.format(parseKietDateTime(value));
 }

@@ -12,6 +12,7 @@ import {
   formatScheduleDay,
   formatScheduleTime,
   getUpcomingClasses,
+  getWeeklyClasses,
   getWeekRange,
   parseKietDateTime,
 } from "./utils/date";
@@ -126,6 +127,7 @@ export type DatewiseAttendanceState = {
 };
 
 function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [extensionDetected, setExtensionDetected] = useState(false);
   const [isSyncingFuture, setIsSyncingFuture] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -133,6 +135,7 @@ function App() {
   const [attendance, setAttendance] = useState<StudentDetails | null>(null);
   const [studentContextOverride, setStudentContextOverride] = useState<StudentContext | null>(null);
   const [upcomingClasses, setUpcomingClasses] = useState<ScheduleEntry[]>([]);
+  const [currentWeekFullClasses, setCurrentWeekFullClasses] = useState<ScheduleEntry[]>([]);
   const [futureClasses, setFutureClasses] = useState<ScheduleEntry[]>([]);
   const [plannedBunks, setPlannedBunks] = useState<Set<string>>(new Set());
   const [expandedPlanners, setExpandedPlanners] = useState<Set<string>>(new Set());
@@ -362,6 +365,11 @@ function App() {
   }, [overallSummary, futureClasses, selectedBunkDates]);
 
   useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
     if (!attendance) {
       setStreakDayData({});
       setStreakSubjectAbsencesByDate({});
@@ -445,6 +453,7 @@ function App() {
       if (!sessionStatus.hasToken) {
         setAttendance(null);
         setUpcomingClasses([]);
+        setCurrentWeekFullClasses([]);
         setFutureClasses([]);
         setExpandedDatewise(new Set());
         setDatewiseAttendance({});
@@ -470,6 +479,7 @@ function App() {
 
       const currentWeekSchedule = currentWeekScheduleUnfiltered ?? [];
       const currentWeekClasses = getUpcomingClasses(currentWeekSchedule);
+      const fullWeekClasses = getWeeklyClasses(currentWeekSchedule);
       
       setAttendance(attendanceData);
       setStudentContextOverride(
@@ -481,6 +491,7 @@ function App() {
             },
       );
       setUpcomingClasses(currentWeekClasses);
+      setCurrentWeekFullClasses(fullWeekClasses);
       setFutureClasses(currentWeekClasses); // Base initial future classes
       setLoadState("ready");
 
@@ -587,6 +598,7 @@ function App() {
       await callExtension("CLEAR_SESSION", {});
       setAttendance(null);
       setUpcomingClasses([]);
+      setCurrentWeekFullClasses([]);
       setFutureClasses([]);
       setPlannedBunks(new Set());
       setExpandedPlanners(new Set());
@@ -767,19 +779,40 @@ function App() {
 
   const calendarData = {
     upcomingClasses,
+    currentWeekFullClasses,
   };
 
   return (
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         
-        <nav className="app-nav rise-in">
-          <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
-          <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
-          <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
-          <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
-          <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
-          <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
+        <nav className="app-nav rise-in flex-between">
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", flexWrap: "nowrap" }}>
+            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+            <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
+            <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+            <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+            <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
+            <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
+          </div>
+          <button 
+            onClick={() => setTheme(prev => prev === "light" ? "amoled" : "light")}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 20,
+              padding: "0 8px",
+              color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0
+            }}
+            title={theme === "light" ? "Switch to AMOLED Theme" : "Switch to Light Theme"}
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
         </nav>
 
         <Routes>
