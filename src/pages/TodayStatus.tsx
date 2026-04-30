@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { callExtension } from "../utils/bridge";
-import { getWeekRange, parseKietDateTime, formatIsoDate } from "../utils/date";
+import { getWeekRange, parseKietDateTime, formatIsoDate, getPreviousWorkingDay, formatDisplayDate } from "../utils/date";
 import type { StudentContext } from "../App";
 import type { StudentDetails, ScheduleEntry, DatewiseAttendanceBucket } from "../types/kiet";
 import { Notice, StatusCard, secondaryButtonStyle } from "../App";
@@ -22,46 +22,55 @@ type TodayClass = {
 };
 
 // Module-level cache to persist across component remounts during the same day
-let moduleScheduleCache: ScheduleEntry[] | null = null;
+let moduleScheduleCaches: Record<string, ScheduleEntry[]> = {};
 let moduleAttendanceCache: Record<string, DatewiseAttendanceBucket[]> = {};
 let moduleLastFetchDateIso: string | null = null;
 
 export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
-  const [hasFetched, setHasFetched] = useState(false);
+  const [mode, setMode] = useState<"today" | "yesterday">("today");
+  const [hasFetchedToday, setHasFetchedToday] = useState(false);
+  const [hasFetchedYesterday, setHasFetchedYesterday] = useState(false);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [todayClasses, setTodayClasses] = useState<TodayClass[]>([]);
+  const [yesterdayClasses, setYesterdayClasses] = useState<TodayClass[]>([]);
 
-  const fetchTodayData = useCallback(async (forceRefresh = false) => {
+  const fetchDailyData = useCallback(async (targetMode: "today" | "yesterday", forceRefresh = false) => {
     if (!studentContext || !attendance) return;
     
     setIsLoadingSchedule(true);
     setScheduleError(null);
     try {
-      const todayDateIso = formatIsoDate(new Date());
+      const currentDateIso = formatIsoDate(new Date());
+      const targetDateObj = targetMode === "today" ? new Date() : getPreviousWorkingDay(new Date());
+      const targetDateIso = formatIsoDate(targetDateObj);
 
       // Invalidate cache if a new day has started or forceRefresh is true
-      if (forceRefresh || moduleLastFetchDateIso !== todayDateIso) {
-         moduleScheduleCache = null;
+      if (forceRefresh || moduleLastFetchDateIso !== currentDateIso) {
+         moduleScheduleCaches = {};
          moduleAttendanceCache = {};
-         moduleLastFetchDateIso = todayDateIso;
+         moduleLastFetchDateIso = currentDateIso;
+         if (forceRefresh) {
+            setHasFetchedToday(false);
+            setHasFetchedYesterday(false);
+         }
       }
 
-      let schedule = moduleScheduleCache;
+      const weekRange = getWeekRange(targetDateObj, 0);
+      let schedule = moduleScheduleCaches[weekRange.weekStartDate];
       if (!schedule) {
-         const weekRange = getWeekRange(new Date(), 0);
          schedule = await callExtension("FETCH_SCHEDULE", weekRange);
-         moduleScheduleCache = schedule;
+         moduleScheduleCaches[weekRange.weekStartDate] = schedule;
       }
       
-      const entriesToday = (schedule || []).filter((entry: ScheduleEntry) => {
+      const entriesForDay = (schedule || []).filter((entry: ScheduleEntry) => {
          if (entry.type !== "CLASS") return false;
          const entryDate = formatIsoDate(parseKietDateTime(entry.start));
-         return entryDate === todayDateIso;
+         return entryDate === targetDateIso;
       }).sort((a: ScheduleEntry, b: ScheduleEntry) => parseKietDateTime(a.start).getTime() - parseKietDateTime(b.start).getTime());
 
       // Match entries with courseId and courseCompId
-      const classesWithIds: TodayClass[] = entriesToday.map((entry: ScheduleEntry) => {
+      const classesWithIds: TodayClass[] = entriesForDay.map((entry: ScheduleEntry) => {
         let courseId: number | null = null;
         let courseComponentId: number | null = null;
         
@@ -90,8 +99,11 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
         };
       });
 
-      setTodayClasses(classesWithIds);
-      setHasFetched(true);
+      const setTargetClasses = targetMode === "today" ? setTodayClasses : setYesterdayClasses;
+      setTargetClasses(classesWithIds);
+      
+      if (targetMode === "today") setHasFetchedToday(true);
+      else setHasFetchedYesterday(true);
       
       // Fetch attendance for each unique component
       const uniqueComponents = new Set<string>();
@@ -104,7 +116,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       for (const compKey of uniqueComponents) {
          if (!moduleAttendanceCache[compKey]) {
             const [cId, ccId] = compKey.split("-").map(Number);
-            setTodayClasses(prev => prev.map(tc => 
+            setTargetClasses(prev => prev.map(tc => 
                (tc.courseId === cId && tc.courseComponentId === ccId) ? { ...tc, isLoading: true, error: null } : tc
             ));
             
@@ -118,7 +130,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
                moduleAttendanceCache[compKey] = res;
             } catch (err) {
                const errorMsg = err instanceof Error ? err.message : String(err);
-               setTodayClasses(prev => prev.map(tc => 
+               setTargetClasses(prev => prev.map(tc => 
                   (tc.courseId === cId && tc.courseComponentId === ccId) ? { ...tc, isLoading: false, error: errorMsg } : tc
                ));
             }
@@ -126,7 +138,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       }
       
       // Update attendanceStatus mapping
-      setTodayClasses(prev => prev.map(tc => {
+      setTargetClasses(prev => prev.map(tc => {
          if (!tc.courseId || !tc.courseComponentId) return tc;
          const compKey = `${tc.courseId}-${tc.courseComponentId}`;
          const buckets = moduleAttendanceCache[compKey];
@@ -134,7 +146,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
          
          const lectures = buckets.flatMap((b: DatewiseAttendanceBucket) => b.lectureList || []).filter((l) => {
             if (!l.planLecDate) return false;
-            return l.planLecDate === todayDateIso;
+            return l.planLecDate === targetDateIso;
          });
          
          let matchedLecture = null;
@@ -180,10 +192,20 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
   }, [attendance, studentContext]);
 
   useEffect(() => {
-    if (!hasFetched && studentContext && attendance) {
-      fetchTodayData();
+    if (studentContext && attendance) {
+       if (mode === "today" && !hasFetchedToday) {
+          fetchDailyData("today");
+       } else if (mode === "yesterday" && !hasFetchedYesterday) {
+          fetchDailyData("yesterday");
+       }
     }
-  }, [hasFetched, fetchTodayData, studentContext, attendance]);
+  }, [mode, hasFetchedToday, hasFetchedYesterday, fetchDailyData, studentContext, attendance]);
+
+  const handleModeChange = (newMode: "today" | "yesterday") => {
+     if (newMode !== mode) {
+        setMode(newMode);
+     }
+  };
 
   if (!attendance || !studentContext) {
     return (
@@ -195,29 +217,67 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
     );
   }
 
-  const totalClasses = todayClasses.length;
-  const presentCount = todayClasses.filter(c => String(c.attendanceStatus).toUpperCase() === "PRESENT").length;
-  const absentCount = todayClasses.filter(c => String(c.attendanceStatus).toUpperCase() === "ABSENT").length;
-  const notMarkedCount = todayClasses.filter(c => (!c.attendanceStatus || String(c.attendanceStatus).toUpperCase() === "NULL") && !c.isLoading && !c.error).length;
+  const activeClasses = mode === "today" ? todayClasses : yesterdayClasses;
+  const totalClasses = activeClasses.length;
+  const presentCount = activeClasses.filter(c => String(c.attendanceStatus).toUpperCase() === "PRESENT").length;
+  const absentCount = activeClasses.filter(c => String(c.attendanceStatus).toUpperCase() === "ABSENT").length;
+  const notMarkedCount = activeClasses.filter(c => (!c.attendanceStatus || String(c.attendanceStatus).toUpperCase() === "NULL") && !c.isLoading && !c.error).length;
   
   return (
     <div className="rise-in" style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "grid", gap: 4 }}>
           <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "var(--text-primary)" }}>
-            Today's attendance overview
+            {mode === "today" ? "Today's attendance" : `Yesterday (${formatDisplayDate(getPreviousWorkingDay(new Date()))})`}
           </h1>
           <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 15 }}>
-            Check what's marked and what's missing.
+            {mode === "today" ? "Check what's marked and what's missing." : "Review what was marked yesterday."}
           </p>
         </div>
         <button 
            className="action-button action-button--secondary"
-           onClick={() => fetchTodayData(true)}
+           onClick={() => fetchDailyData(mode, true)}
            disabled={isLoadingSchedule}
            style={{ ...secondaryButtonStyle, opacity: isLoadingSchedule ? 0.7 : 1 }}
         >
           {isLoadingSchedule ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, padding: 4, background: "var(--bg-secondary)", borderRadius: 12, width: "fit-content" }}>
+        <button
+          onClick={() => handleModeChange("today")}
+          style={{
+             padding: "8px 16px",
+             borderRadius: 8,
+             border: "none",
+             fontWeight: 600,
+             fontSize: 14,
+             cursor: "pointer",
+             background: mode === "today" ? "var(--bg-primary)" : "transparent",
+             color: mode === "today" ? "var(--text-primary)" : "var(--text-muted)",
+             boxShadow: mode === "today" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+             transition: "all 0.2s ease"
+          }}
+        >
+          Today
+        </button>
+        <button
+          onClick={() => handleModeChange("yesterday")}
+          style={{
+             padding: "8px 16px",
+             borderRadius: 8,
+             border: "none",
+             fontWeight: 600,
+             fontSize: 14,
+             cursor: "pointer",
+             background: mode === "yesterday" ? "var(--bg-primary)" : "transparent",
+             color: mode === "yesterday" ? "var(--text-primary)" : "var(--text-muted)",
+             boxShadow: mode === "yesterday" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+             transition: "all 0.2s ease"
+          }}
+        >
+          Yesterday
         </button>
       </div>
 
@@ -226,9 +286,9 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       )}
 
       {!isLoadingSchedule && totalClasses === 0 && !scheduleError && (
-        <Panel title="No classes today" subtitle="Nothing is scheduled for today.">
+        <Panel title={`No classes ${mode}`} subtitle={`Nothing is scheduled for ${mode}.`}>
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: 16 }}>
-            You're all clear for today.
+            You're all clear for {mode}.
           </div>
         </Panel>
       )}
@@ -252,9 +312,9 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
             </div>
           )}
 
-          <Panel title="Today's classes" subtitle="See what is marked for each class.">
+          <Panel title={`${mode === "today" ? "Today's" : "Yesterday's"} classes`} subtitle="See what is marked for each class.">
             <div style={{ display: "grid", gap: 12 }}>
-              {todayClasses.map((tc, idx) => {
+              {activeClasses.map((tc, idx) => {
                  let statusDisplay = "Not marked";
                  let statusTheme = {
                    background: "var(--warning-soft)",

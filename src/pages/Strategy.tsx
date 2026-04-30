@@ -165,6 +165,7 @@ export interface StrategyData {
   streakSubjectAbsencesByDate: SubjectAbsencesByDate;
   streakLoading: boolean;
   streakIsReliable: boolean;
+  isSyncingFuture?: boolean;
 }
 
 export interface StrategyHandlers {

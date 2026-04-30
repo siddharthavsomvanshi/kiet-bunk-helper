@@ -106,3 +106,20 @@ export function formatCapturedAt(timestamp: number | null): string {
     minute: "2-digit",
   }).format(timestamp);
 }
+
+export function getPreviousWorkingDay(date: Date): Date {
+  const prev = new Date(date);
+  prev.setDate(prev.getDate() - 1);
+  
+  if (prev.getDay() === 0) { // Sunday
+    prev.setDate(prev.getDate() - 2);
+  } else if (prev.getDay() === 6) { // Saturday
+    prev.setDate(prev.getDate() - 1);
+  }
+  
+  return prev;
+}
+
+export function formatDisplayDate(date: Date): string {
+  return DATE_FORMATTER.format(date);
+}

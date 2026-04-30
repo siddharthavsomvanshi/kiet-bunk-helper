@@ -127,6 +127,7 @@ export type DatewiseAttendanceState = {
 
 function App() {
   const [extensionDetected, setExtensionDetected] = useState(false);
+  const [isSyncingFuture, setIsSyncingFuture] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [sessionCapturedAt, setSessionCapturedAt] = useState<number | null>(null);
   const [attendance, setAttendance] = useState<StudentDetails | null>(null);
@@ -456,26 +457,20 @@ function App() {
         setStreakResult(null);
         setStreakLoading(false);
         setLoadState("idle");
+      setIsSyncingFuture(false);
         return;
       }
 
       const now = new Date();
-      const [attendanceData, fetchedStudentInfo] = await Promise.all([
+      const [attendanceData, fetchedStudentInfo, currentWeekScheduleUnfiltered] = await Promise.all([
         callExtension("FETCH_ATTENDANCE", {}),
         callExtension("FETCH_STUDENT_ID", {}),
+        callExtension("FETCH_SCHEDULE", getWeekRange(now, 0))
       ]);
 
-      const fetchedWeekSchedules = [];
-      for (let weekOffset = 0; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
-        fetchedWeekSchedules.push(
-          await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
-        );
-      }
-
-      const currentWeekSchedule = fetchedWeekSchedules[0] ?? [];
-      const allFutureClasses = getUpcomingClasses(fetchedWeekSchedules.flat());
-      const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
-
+      const currentWeekSchedule = currentWeekScheduleUnfiltered ?? [];
+      const currentWeekClasses = getUpcomingClasses(currentWeekSchedule);
+      
       setAttendance(attendanceData);
       setStudentContextOverride(
         fetchedStudentInfo.studentId === null
@@ -485,20 +480,40 @@ function App() {
               sessionId: fetchedStudentInfo.sessionId,
             },
       );
-      setUpcomingClasses(getUpcomingClasses(currentWeekSchedule));
-      setFutureClasses(allFutureClasses);
-      setSelectedBunkDates((previous) => {
-        const next = new Set<string>();
-
-        for (const dateKey of previous) {
-          if (availableBunkDates.has(dateKey)) {
-            next.add(dateKey);
-          }
-        }
-
-        return next;
-      });
+      setUpcomingClasses(currentWeekClasses);
+      setFutureClasses(currentWeekClasses); // Base initial future classes
       setLoadState("ready");
+
+      // Progressive Loading: Fetch remaining 11 weeks in background
+      setIsSyncingFuture(true);
+      void (async () => {
+        try {
+          const futureWeekSchedules = [];
+          for (let weekOffset = 1; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
+            futureWeekSchedules.push(
+              await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
+            );
+          }
+          const allSchedules = [currentWeekScheduleUnfiltered, ...futureWeekSchedules];
+          const allFutureClasses = getUpcomingClasses(allSchedules.flat());
+          const availableBunkDates = new Set(allFutureClasses.map(getScheduleDateKey));
+          
+          setFutureClasses(allFutureClasses);
+          setSelectedBunkDates((previous) => {
+            const next = new Set<string>();
+            for (const dateKey of previous) {
+              if (availableBunkDates.has(dateKey)) {
+                next.add(dateKey);
+              }
+            }
+            return next;
+          });
+        } catch (error) {
+          console.error("Failed to sync future weeks:", error);
+        } finally {
+          setIsSyncingFuture(false);
+        }
+      })();
     } catch (caughtError) {
       setLoadState("error");
       setAttendance(null);
@@ -588,6 +603,7 @@ function App() {
       setStreakResult(null);
       setStreakLoading(false);
       setLoadState("idle");
+      setIsSyncingFuture(false);
       window.location.href = "https://kiet.cybervidya.net/?action=logout";
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
@@ -701,6 +717,7 @@ function App() {
 
   const dashboardData = {
     extensionDetected,
+    isSyncingFuture,
     loadState,
     sessionCapturedAt,
     attendance,
@@ -731,6 +748,7 @@ function App() {
 
   const strategyData = {
     bunkableDays,
+    isSyncingFuture,
     selectedBunkDates,
     selectedBunkCutoffDateKey,
     overallWholeDayPlan,
