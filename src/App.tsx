@@ -139,6 +139,7 @@ function App() {
   const [futureClasses, setFutureClasses] = useState<ScheduleEntry[]>([]);
   const [plannedBunks, setPlannedBunks] = useState<Set<string>>(new Set());
   const [expandedPlanners, setExpandedPlanners] = useState<Set<string>>(new Set());
+  const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [showWholeDayPlanner, setShowWholeDayPlanner] = useState(false);
   const [expandedDatewise, setExpandedDatewise] = useState<Set<string>>(new Set());
   const [datewiseAttendance, setDatewiseAttendance] = useState<
@@ -456,6 +457,7 @@ function App() {
         setCurrentWeekFullClasses([]);
         setFutureClasses([]);
         setExpandedDatewise(new Set());
+        setExpandedDetails(new Set());
         setDatewiseAttendance({});
         setDatewiseLoading(new Set());
         setDatewiseErrors({});
@@ -602,6 +604,7 @@ function App() {
       setFutureClasses([]);
       setPlannedBunks(new Set());
       setExpandedPlanners(new Set());
+      setExpandedDetails(new Set());
       setExpandedDatewise(new Set());
       setDatewiseAttendance({});
       setDatewiseLoading(new Set());
@@ -624,6 +627,20 @@ function App() {
 
   function handlePlannerToggle(subjectId: string) {
     setExpandedPlanners((previous) => {
+      const next = new Set(previous);
+
+      if (next.has(subjectId)) {
+        next.delete(subjectId);
+      } else {
+        next.add(subjectId);
+      }
+
+      return next;
+    });
+  }
+
+  function handleDetailsToggle(subjectId: string) {
+    setExpandedDetails((previous) => {
       const next = new Set(previous);
 
       if (next.has(subjectId)) {
@@ -741,6 +758,7 @@ function App() {
     subjectSummaries,
     overallSummary,
     expandedPlanners,
+    expandedDetails,
     expandedDatewise,
     datewiseLoading,
     datewiseErrors,
@@ -755,6 +773,7 @@ function App() {
     handleClearSession,
     handlePlannerToggle,
     handleDatewiseToggle,
+    handleDetailsToggle,
     handleBunkToggle,
   };
 

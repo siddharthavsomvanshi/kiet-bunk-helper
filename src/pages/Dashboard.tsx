@@ -42,6 +42,7 @@ export interface DashboardData {
   subjectSummaries: SubjectSummary[];
   overallSummary: OverallSummary | null;
   expandedPlanners: Set<string>;
+  expandedDetails: Set<string>;
   expandedDatewise: Set<string>;
   datewiseLoading: Set<string>;
   datewiseErrors: Record<string, string>;
@@ -56,6 +57,7 @@ export interface DashboardHandlers {
   handleClearSession: () => void;
   handlePlannerToggle: (subjectId: string) => void;
   handleDatewiseToggle: (subject: SubjectSummary) => void;
+  handleDetailsToggle: (subjectId: string) => void;
   handleBunkToggle: (entry: ScheduleEntry) => void;
 }
 
@@ -365,26 +367,43 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                           healthy={subject.projectedPercentage >= 75}
                         />
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                            gap: 10,
-                            color: "var(--text-secondary)",
-                            fontSize: 14,
-                          }}
-                        >
-                          <Metric label="Present" value={String(subject.present)} />
-                          <Metric label="Extra" value={String(subject.extraAttendance)} />
-                          <Metric label="Total" value={String(subject.total)} />
-                          <Metric label="Upcoming" value={String(subject.upcomingCount)} />
-                          <Metric label="Selected" value={String(subject.plannedBunkCount)} />
-                          <Metric
-                            label="If attended"
-                            value={`${subject.projectedPresent}/${subject.projectedTotal}`}
-                          />
-                          <Metric label="Safe bunks" value={String(subject.safeBunks)} />
-                          <Metric label="Needed to 75%" value={String(subject.classesNeeded)} />
+                        <div style={{ display: "grid", gap: 10 }}>
+                          <button
+                            className="action-button action-button--secondary"
+                            type="button"
+                            onClick={() => handlers.handleDetailsToggle(subject.id)}
+                            style={secondaryButtonStyle}
+                          >
+                            {data.expandedDetails.has(subject.id) ? "Hide details" : "View details"}
+                          </button>
+
+                          {data.expandedDetails.has(subject.id) && (
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                                gap: 10,
+                                color: "var(--text-secondary)",
+                                fontSize: 14,
+                                padding: 14,
+                                borderRadius: 16,
+                                border: "1px dashed var(--border-color)",
+                                background: "var(--bg-body)",
+                              }}
+                            >
+                              <Metric label="Present" value={String(subject.present)} />
+                              <Metric label="Extra" value={String(subject.extraAttendance)} />
+                              <Metric label="Total" value={String(subject.total)} />
+                              <Metric label="Upcoming" value={String(subject.upcomingCount)} />
+                              <Metric label="Selected" value={String(subject.plannedBunkCount)} />
+                              <Metric
+                                label="If attended"
+                                value={`${subject.projectedPresent}/${subject.projectedTotal}`}
+                              />
+                              <Metric label="Safe bunks" value={String(subject.safeBunks)} />
+                              <Metric label="Needed to 75%" value={String(subject.classesNeeded)} />
+                            </div>
+                          )}
                         </div>
 
                         {subject.upcomingCount > 0 && (
