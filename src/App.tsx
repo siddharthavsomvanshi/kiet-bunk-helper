@@ -126,6 +126,13 @@ export type DatewiseAttendanceState = {
   lectures: DatewiseAttendanceLecture[];
 };
 
+export type SubjectOverlayState =
+  | {
+      kind: "details" | "planner" | "attendance";
+      subjectId: string;
+    }
+  | null;
+
 function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [extensionDetected, setExtensionDetected] = useState(false);
@@ -138,10 +145,8 @@ function App() {
   const [currentWeekFullClasses, setCurrentWeekFullClasses] = useState<ScheduleEntry[]>([]);
   const [futureClasses, setFutureClasses] = useState<ScheduleEntry[]>([]);
   const [plannedBunks, setPlannedBunks] = useState<Set<string>>(new Set());
-  const [expandedPlanners, setExpandedPlanners] = useState<Set<string>>(new Set());
-  const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [showWholeDayPlanner, setShowWholeDayPlanner] = useState(false);
-  const [expandedDatewise, setExpandedDatewise] = useState<Set<string>>(new Set());
+  const [activeSubjectOverlay, setActiveSubjectOverlay] = useState<SubjectOverlayState>(null);
   const [datewiseAttendance, setDatewiseAttendance] = useState<
     Record<string, DatewiseAttendanceState>
   >({});
@@ -456,8 +461,7 @@ function App() {
         setUpcomingClasses([]);
         setCurrentWeekFullClasses([]);
         setFutureClasses([]);
-        setExpandedDatewise(new Set());
-        setExpandedDetails(new Set());
+        setActiveSubjectOverlay(null);
         setDatewiseAttendance({});
         setDatewiseLoading(new Set());
         setDatewiseErrors({});
@@ -533,6 +537,7 @@ function App() {
       setStudentContextOverride(null);
       setUpcomingClasses([]);
       setFutureClasses([]);
+      setActiveSubjectOverlay(null);
       setStreakDayData({});
       setStreakSubjectAbsencesByDate({});
       setStreakResult(null);
@@ -603,9 +608,7 @@ function App() {
       setCurrentWeekFullClasses([]);
       setFutureClasses([]);
       setPlannedBunks(new Set());
-      setExpandedPlanners(new Set());
-      setExpandedDetails(new Set());
-      setExpandedDatewise(new Set());
+      setActiveSubjectOverlay(null);
       setDatewiseAttendance({});
       setDatewiseLoading(new Set());
       setDatewiseErrors({});
@@ -625,50 +628,31 @@ function App() {
     }
   }
 
-  function handlePlannerToggle(subjectId: string) {
-    setExpandedPlanners((previous) => {
-      const next = new Set(previous);
-
-      if (next.has(subjectId)) {
-        next.delete(subjectId);
-      } else {
-        next.add(subjectId);
-      }
-
-      return next;
+  function openPlannerOverlay(subjectId: string) {
+    setActiveSubjectOverlay({
+      kind: "planner",
+      subjectId,
     });
   }
 
-  function handleDetailsToggle(subjectId: string) {
-    setExpandedDetails((previous) => {
-      const next = new Set(previous);
-
-      if (next.has(subjectId)) {
-        next.delete(subjectId);
-      } else {
-        next.add(subjectId);
-      }
-
-      return next;
+  function openDetailsOverlay(subjectId: string) {
+    setActiveSubjectOverlay({
+      kind: "details",
+      subjectId,
     });
   }
 
-  async function handleDatewiseToggle(subject: SubjectSummary) {
-    const wasExpanded = expandedDatewise.has(subject.id);
+  function closeSubjectOverlay() {
+    setActiveSubjectOverlay(null);
+  }
 
-    setExpandedDatewise((previous) => {
-      const next = new Set(previous);
-
-      if (next.has(subject.id)) {
-        next.delete(subject.id);
-      } else {
-        next.add(subject.id);
-      }
-
-      return next;
+  async function openDatewiseOverlay(subject: SubjectSummary) {
+    setActiveSubjectOverlay({
+      kind: "attendance",
+      subjectId: subject.id,
     });
 
-    if (wasExpanded || datewiseAttendance[subject.id] || datewiseLoading.has(subject.id)) {
+    if (datewiseAttendance[subject.id] || datewiseLoading.has(subject.id)) {
       return;
     }
 
@@ -757,9 +741,7 @@ function App() {
     studentContext,
     subjectSummaries,
     overallSummary,
-    expandedPlanners,
-    expandedDetails,
-    expandedDatewise,
+    activeSubjectOverlay,
     datewiseLoading,
     datewiseErrors,
     datewiseAttendance,
@@ -771,9 +753,10 @@ function App() {
     handleConnectClick,
     syncDashboard,
     handleClearSession,
-    handlePlannerToggle,
-    handleDatewiseToggle,
-    handleDetailsToggle,
+    openPlannerOverlay,
+    openDetailsOverlay,
+    openDatewiseOverlay,
+    closeSubjectOverlay,
     handleBunkToggle,
   };
 

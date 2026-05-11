@@ -50,6 +50,7 @@
   --shadow-md: 0 14px 28px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.1);
   --shadow-button: 0 10px 22px rgba(79, 70, 229, 0.18);
+  --overlay-backdrop: rgba(15, 23, 42, 0.72);
 
   --transition-fast: 140ms ease;
   --transition-base: 180ms ease;
@@ -98,6 +99,7 @@
   --shadow-md: 0 14px 28px rgba(0, 0, 0, 0.7);
   --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.8);
   --shadow-button: 0 10px 22px rgba(0, 0, 0, 0.6);
+  --overlay-backdrop: rgba(0, 0, 0, 0.82);
 
   color-scheme: dark;
 }
@@ -565,6 +567,67 @@ h6,
   color: var(--primary-hover);
 }
 
+.overlay-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 18px;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-dialog-panel {
+  width: min(920px, 100%);
+  max-height: min(88vh, 920px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.overlay-dialog-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.overlay-dialog-title {
+  margin: 0 0 6px;
+  font-size: clamp(1.45rem, 2vw, 1.85rem);
+}
+
+.overlay-dialog-subtitle {
+  margin: 0;
+}
+
+.overlay-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.overlay-dialog-close {
+  min-width: 88px;
+}
+
+.overlay-dialog-body {
+  min-height: 0;
+  overflow: hidden;
+  padding: 22px 24px 24px;
+}
+
 .notice-banner,
 .recovery-note {
   border: 1px solid var(--border);
@@ -708,5 +771,29 @@ label {
 
   .metric-chip {
     min-height: 80px;
+  }
+
+  .overlay-dialog-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .overlay-dialog-panel {
+    width: 100%;
+    max-height: min(94dvh, 100vh);
+    border-radius: 26px;
+  }
+
+  .overlay-dialog-header {
+    padding: 18px 18px 14px;
+  }
+
+  .overlay-dialog-body {
+    padding: 18px 18px 20px;
+  }
+
+  .overlay-dialog-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
