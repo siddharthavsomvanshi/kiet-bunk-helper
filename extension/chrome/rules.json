@@ -13,7 +13,7 @@
         {
           "header": "Referer",
           "operation": "set",
-          "value": "https://kiet.cybervidya.net/"
+          "value": "https://kiet.cybervidya.net/main/dashboard"
         },
         {
           "header": "Sec-Fetch-Site",
