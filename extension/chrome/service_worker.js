@@ -23,12 +23,53 @@ async function getStoredToken() {
   return result.authToken ?? null;
 }
 
+async function setupHeaderRules() {
+  if (!chrome.declarativeNetRequest) return;
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const ruleIds = existingRules.map((r) => r.id);
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: ruleIds,
+      addRules: [
+        {
+          id: 1,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              { header: "Origin", operation: "set", value: "https://kiet.cybervidya.net" },
+              { header: "Referer", operation: "set", value: "https://kiet.cybervidya.net/" },
+              { header: "Sec-Fetch-Site", operation: "set", value: "same-origin" },
+            ],
+          },
+          condition: {
+            urlFilter: "https://kiet.cybervidya.net/*",
+            resourceTypes: ["xmlhttprequest", "other", "main_frame", "sub_frame"],
+          },
+        },
+      ],
+    });
+  } catch (err) {
+    console.error("Failed to setup declarativeNetRequest rules:", err);
+  }
+}
+
+setupHeaderRules();
+
+if (chrome.runtime.onInstalled) {
+  chrome.runtime.onInstalled.addListener(() => {
+    setupHeaderRules();
+  });
+}
+
 async function fetchKietJson(pathname, options = {}) {
   const token = await getStoredToken();
 
   if (!token) {
     throw new Error("No KIET session is saved yet. Connect through the extension first.");
   }
+
+  await setupHeaderRules();
 
   const response = await fetch(`${API_BASE_URL}${pathname}`, {
     method: options.method ?? "GET",
@@ -50,9 +91,11 @@ async function fetchKietJson(pathname, options = {}) {
 
   if (!response.ok) {
     const responseText = await response.text();
-    throw new Error(
-      `KIET API request failed with ${response.status}: ${responseText.slice(0, 160)}`,
-    );
+    let msg = `KIET API request failed with ${response.status}: ${responseText.slice(0, 160)}`;
+    if (response.status === 403 && responseText.includes("Blocked")) {
+      msg = `Domain blocked by KIET API (403). Please reload the extension at chrome://extensions to activate request rules.`;
+    }
+    throw new Error(msg);
   }
 
   return response.json();

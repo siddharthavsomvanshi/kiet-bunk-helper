@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://kiet.cybervidya.net"
+        },
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://kiet.cybervidya.net/"
+        },
+        {
+          "header": "Sec-Fetch-Site",
+          "operation": "set",
+          "value": "same-origin"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://kiet.cybervidya.net/*",
+      "resourceTypes": [
+        "xmlhttprequest",
+        "other",
+        "main_frame",
+        "sub_frame"
+      ]
+    }
+  }
+]

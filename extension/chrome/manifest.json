@@ -1,9 +1,18 @@
 {
   "manifest_version": 3,
   "name": "KIET Auth Bridge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Captures the KIET ERP session and proxies attendance APIs to the dashboard.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "declarativeNetRequest"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "kiet_headers_rules",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "host_permissions": [
     "https://kiet.cybervidya.net/*",
     "http://localhost/*",
