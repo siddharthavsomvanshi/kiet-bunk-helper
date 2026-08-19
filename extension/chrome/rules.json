@@ -23,13 +23,7 @@
       ]
     },
     "condition": {
-      "urlFilter": "https://kiet.cybervidya.net/*",
-      "resourceTypes": [
-        "xmlhttprequest",
-        "other",
-        "main_frame",
-        "sub_frame"
-      ]
+      "urlFilter": "https://kiet.cybervidya.net/*"
     }
   }
 ]

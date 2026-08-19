@@ -44,7 +44,6 @@ async function setupHeaderRules() {
           },
           condition: {
             urlFilter: "https://kiet.cybervidya.net/*",
-            resourceTypes: ["xmlhttprequest", "other", "main_frame", "sub_frame"],
           },
         },
       ],
@@ -77,7 +76,7 @@ async function fetchKietJson(pathname, options = {}) {
       Authorization: `GlobalEducation ${token}`,
       ...(options.includeJsonHeaders
         ? {
-            "Content-Type": "application/json",
+            "Content-Type": "text/plain;charset=UTF-8",
           }
         : {}),
     },
