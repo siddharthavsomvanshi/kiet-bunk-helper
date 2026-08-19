@@ -18,9 +18,12 @@ function removeStorage(keys) {
   });
 }
 
-async function getStoredToken() {
-  const result = await getStorage(["authToken"]);
-  return result.authToken ?? null;
+async function getStoredSession() {
+  const result = await getStorage(["authToken", "uid", "studentId"]);
+  return {
+    token: result.authToken ?? null,
+    uid: result.uid ?? result.studentId ?? null,
+  };
 }
 
 async function setupHeaderRules() {
@@ -38,7 +41,7 @@ async function setupHeaderRules() {
             type: "modifyHeaders",
             requestHeaders: [
               { header: "Origin", operation: "set", value: "https://kiet.cybervidya.net" },
-              { header: "Referer", operation: "set", value: "https://kiet.cybervidya.net/" },
+              { header: "Referer", operation: "set", value: "https://kiet.cybervidya.net/main/dashboard" },
               { header: "Sec-Fetch-Site", operation: "set", value: "same-origin" },
             ],
           },
@@ -62,24 +65,30 @@ if (chrome.runtime.onInstalled) {
 }
 
 async function fetchKietJson(pathname, options = {}) {
-  const token = await getStoredToken();
+  const session = await getStoredSession();
 
-  if (!token) {
+  if (!session.token) {
     throw new Error("No KIET session is saved yet. Connect through the extension first.");
   }
 
   await setupHeaderRules();
 
+  const uidValue = options.uidOverride ?? session.uid;
+
+  const headers = {
+    Authorization: `GlobalEducation ${session.token}`,
+    Accept: "application/json, text/plain, */*",
+    ...(uidValue ? { UID: String(uidValue) } : {}),
+    ...(options.includeJsonHeaders
+      ? {
+          "Content-Type": "application/json",
+        }
+      : {}),
+  };
+
   const response = await fetch(`${API_BASE_URL}${pathname}`, {
     method: options.method ?? "GET",
-    headers: {
-      Authorization: `GlobalEducation ${token}`,
-      ...(options.includeJsonHeaders
-        ? {
-            "Content-Type": "text/plain;charset=UTF-8",
-          }
-        : {}),
-    },
+    headers,
     body: options.body,
   });
 
@@ -190,6 +199,7 @@ async function handleMessage(message) {
         {
           method: "POST",
           includeJsonHeaders: true,
+          uidOverride: studentId,
           body: JSON.stringify({
             studentId,
             sessionId,
@@ -206,7 +216,7 @@ async function handleMessage(message) {
     }
 
     case "CLEAR_SESSION":
-      await removeStorage(["authToken", "capturedAt", "pendingLogin", "sourceUrl"]);
+      await removeStorage(["authToken", "uid", "studentId", "capturedAt", "pendingLogin", "sourceUrl"]);
       return { ok: true, payload: { ok: true } };
 
     default:

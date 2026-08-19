@@ -90,6 +90,11 @@ function attachAppBridge() {
 
 function maybeCaptureTokenAndReturn() {
   const token = localStorage.getItem("authenticationtoken");
+  const uid =
+    localStorage.getItem("uid") ||
+    localStorage.getItem("userId") ||
+    localStorage.getItem("user") ||
+    localStorage.getItem("studentId");
 
   if (!token) {
     return;
@@ -105,6 +110,7 @@ function maybeCaptureTokenAndReturn() {
         type: "STORE_TOKEN",
         payload: {
           token: sanitizeToken(token),
+          uid: uid ? sanitizeToken(uid) : null,
           sourceUrl: window.location.href,
         },
       },
