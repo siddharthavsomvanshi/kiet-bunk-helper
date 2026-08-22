@@ -32,6 +32,7 @@ import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { Strategy } from "./pages/Strategy";
 import { CalendarPage } from "./pages/Calendar";
+import { AttendanceHistory } from "./pages/AttendanceHistory";
 import { TodayStatus } from "./pages/TodayStatus";
 import { Snitch } from "./pages/Snitch";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
@@ -794,6 +795,7 @@ function App() {
             <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
             <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
             <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+            <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
             <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
             <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
           </div>
@@ -841,6 +843,7 @@ function App() {
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+          <Route path="/history" element={<AttendanceHistory studentContext={studentContext} subjects={subjectSummaries} knownSchedule={currentWeekFullClasses} />} />
           <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode /></Suspense>} />
           <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading upload form...</div>}><Contribute /></Suspense>} />
           <Route path="/feedback" element={<Snitch />} />
