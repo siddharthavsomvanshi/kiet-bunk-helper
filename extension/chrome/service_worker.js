@@ -121,13 +121,17 @@ async function handleMessage(message) {
       });
       return { ok: true, payload: { ok: true } };
 
-    case "STORE_TOKEN":
+    case "STORE_TOKEN": {
+      const existing = await getStorage(["uid"]);
+      const newUid = message.payload?.uid ?? existing.uid ?? null;
       await setStorage({
         authToken: message.payload?.token ?? null,
+        uid: newUid,
         capturedAt: Date.now(),
         sourceUrl: message.payload?.sourceUrl ?? null,
       });
       return { ok: true, payload: { ok: true } };
+    }
 
     case "GET_SESSION_STATUS": {
       const result = await getStorage(["authToken", "capturedAt", "targetOrigin"]);
@@ -152,12 +156,19 @@ async function handleMessage(message) {
     case "FETCH_STUDENT_ID": {
       const response = await fetchKietJson("/student/dashboard/registered-courses");
       const firstCourse = Array.isArray(response.data) ? response.data[0] : null;
+      const studentId = firstCourse?.studentId ?? null;
+      const sessionId = firstCourse?.sessionId ?? null;
+
+      const current = await getStorage(["uid"]);
+      if (!current.uid && studentId) {
+        await setStorage({ uid: studentId });
+      }
 
       return {
         ok: true,
         payload: {
-          studentId: firstCourse?.studentId ?? null,
-          sessionId: firstCourse?.sessionId ?? null,
+          studentId,
+          sessionId,
         },
       };
     }

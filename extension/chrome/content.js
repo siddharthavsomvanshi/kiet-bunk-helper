@@ -88,39 +88,63 @@ function attachAppBridge() {
   });
 }
 
+function extractUid() {
+  const keys = ["uid", "userId", "UID", "user_id", "user", "userData", "id", "studentId"];
+  
+  for (const key of keys) {
+    const val = localStorage.getItem(key) || sessionStorage.getItem(key);
+    if (val) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && typeof parsed === "object") {
+          if (parsed.id) return String(parsed.id);
+          if (parsed.userId) return String(parsed.userId);
+          if (parsed.uid) return String(parsed.uid);
+          if (parsed.studentId) return String(parsed.studentId);
+        }
+      } catch (e) {}
+      const clean = val.replace(/^"|"$/g, "");
+      if (/^\d+$/.test(clean)) {
+        return clean;
+      }
+    }
+  }
+
+  const match = document.cookie.match(/(?:^|;\s*)(?:uid|userId|UID|id)=(\d+)/i);
+  if (match) {
+    return match[1];
+  }
+
+  return null;
+}
+
 function maybeCaptureTokenAndReturn() {
   const token = localStorage.getItem("authenticationtoken");
-  const uid =
-    localStorage.getItem("uid") ||
-    localStorage.getItem("userId") ||
-    localStorage.getItem("user") ||
-    localStorage.getItem("studentId");
+  const uid = extractUid();
 
   if (!token) {
     return;
   }
 
-  chrome.storage.local.get(["pendingLogin", "targetOrigin"], (result) => {
-    if (!result.pendingLogin || !result.targetOrigin) {
-      return;
-    }
-
-    chrome.runtime.sendMessage(
-      {
-        type: "STORE_TOKEN",
-        payload: {
-          token: sanitizeToken(token),
-          uid: uid ? sanitizeToken(uid) : null,
-          sourceUrl: window.location.href,
-        },
+  chrome.runtime.sendMessage(
+    {
+      type: "STORE_TOKEN",
+      payload: {
+        token: sanitizeToken(token),
+        uid: uid ? sanitizeToken(uid) : null,
+        sourceUrl: window.location.href,
       },
-      () => {
-        chrome.storage.local.set({ pendingLogin: false }, () => {
-          window.location.href = `${result.targetOrigin}/?session=ready`;
-        });
-      },
-    );
-  });
+    },
+    () => {
+      chrome.storage.local.get(["pendingLogin", "targetOrigin"], (result) => {
+        if (result.pendingLogin && result.targetOrigin) {
+          chrome.storage.local.set({ pendingLogin: false }, () => {
+            window.location.href = `${result.targetOrigin}/?session=ready`;
+          });
+        }
+      });
+    },
+  );
 }
 
 function initialize() {
