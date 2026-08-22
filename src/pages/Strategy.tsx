@@ -621,7 +621,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
         >
           {data.streakLoading ? (
             <EmptyMessage message="Loading recent attendance..." />
-          ) : !data.streakIsReliable ? (
+          ) : !data.streakIsReliable && Object.keys(data.streakDayData).length === 0 ? (
             <EmptyMessage message="Recent attendance is not available right now." />
           ) : leaveRescueDays.length === 0 ? (
             <EmptyMessage message="No missed classes in the last 4 weeks." />
