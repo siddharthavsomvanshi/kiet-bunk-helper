@@ -2,6 +2,7 @@ import type { DatewiseAttendanceBucket, ScheduleEntry, StudentDetails } from "./
 
 export type BridgeRequestType =
   | "PING"
+  | "GET_EXTENSION_INFO"
   | "PREPARE_LOGIN"
   | "GET_SESSION_STATUS"
   | "FETCH_ATTENDANCE"
@@ -12,6 +13,7 @@ export type BridgeRequestType =
 
 export interface BridgeRequestPayloadMap {
   PING: Record<string, never>;
+  GET_EXTENSION_INFO: Record<string, never>;
   PREPARE_LOGIN: { targetOrigin: string };
   GET_SESSION_STATUS: Record<string, never>;
   FETCH_ATTENDANCE: Record<string, never>;
@@ -32,8 +34,14 @@ export interface SessionStatus {
   targetOrigin: string | null;
 }
 
+export interface ExtensionInfo {
+  version: string;
+  protocolVersion: number;
+}
+
 export interface BridgeResponsePayloadMap {
   PING: { ok: true };
+  GET_EXTENSION_INFO: ExtensionInfo;
   PREPARE_LOGIN: { ok: true };
   GET_SESSION_STATUS: SessionStatus;
   FETCH_ATTENDANCE: StudentDetails;

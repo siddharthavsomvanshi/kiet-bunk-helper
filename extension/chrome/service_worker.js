@@ -1,4 +1,5 @@
 const API_BASE_URL = "https://kiet.cybervidya.net/api";
+const BRIDGE_PROTOCOL_VERSION = 2;
 
 function getStorage(keys) {
   return new Promise((resolve) => {
@@ -113,6 +114,15 @@ async function handleMessage(message) {
   switch (message.type) {
     case "PING":
       return { ok: true, payload: { ok: true } };
+
+    case "GET_EXTENSION_INFO":
+      return {
+        ok: true,
+        payload: {
+          version: chrome.runtime.getManifest().version,
+          protocolVersion: BRIDGE_PROTOCOL_VERSION,
+        },
+      };
 
     case "PREPARE_LOGIN":
       await setStorage({

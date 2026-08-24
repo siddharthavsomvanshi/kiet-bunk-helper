@@ -6,7 +6,7 @@ import type {
   ScheduleEntry,
   StudentDetails,
 } from "./types/kiet";
-import { callExtension } from "./utils/bridge";
+import { callExtension, saveKietSession } from "./utils/bridge";
 import {
   formatCapturedAt,
   formatScheduleDay,
@@ -46,6 +46,8 @@ const Contribute = lazy(() => import('./pages/Contribute').then(m => ({ default:
 
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
+const REQUIRED_EXTENSION_VERSION = "0.1.4";
+const REQUIRED_EXTENSION_PROTOCOL_VERSION = 2;
 
 export type SubjectSummary = {
   id: string;
@@ -548,40 +550,33 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get("session")) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
     let isMounted = true;
-    let attempts = 0;
 
-    function checkAndPing() {
-      if (!isMounted) return;
+    void Promise.all([
+      callExtension("GET_EXTENSION_INFO", {}),
+      callExtension("GET_SESSION_STATUS", {}),
+    ])
+      .then(([extensionInfo, status]) => {
+        if (!isMounted) return;
 
-      const marker = document.getElementById("kiet-extension-installed");
+        const isSupported =
+          extensionInfo.version === REQUIRED_EXTENSION_VERSION &&
+          extensionInfo.protocolVersion === REQUIRED_EXTENSION_PROTOCOL_VERSION;
 
-      if (marker) {
-        callExtension("PING", {})
-          .then(() => {
-            if (!isMounted) return;
-            setExtensionDetected(true);
-            return syncDashboard();
-          })
-          .catch((caughtError) => {
-            if (!isMounted) return;
-            setExtensionDetected(false);
-            setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
-          });
-      } else if (attempts < 15) {
-        attempts++;
-        setTimeout(checkAndPing, 100);
-      } else {
+        if (!isSupported) {
+          setExtensionDetected(false);
+          setError(`This dashboard requires KIET Auth Bridge v${REQUIRED_EXTENSION_VERSION}. Please install the current extension.`);
+          return;
+        }
+
+        setExtensionDetected(status.hasToken);
+        if (status.hasToken) void syncDashboard();
+      })
+      .catch((caughtError) => {
+        if (!isMounted) return;
         setExtensionDetected(false);
-      }
-    }
-
-    checkAndPing();
+        setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
+      });
 
     return () => {
       isMounted = false;
@@ -592,10 +587,21 @@ function App() {
     setError("");
 
     try {
-      await callExtension("PREPARE_LOGIN", {
-        targetOrigin: window.location.origin,
-      });
-      window.location.href = "https://kiet.cybervidya.net/";
+      const extensionInfo = await callExtension("GET_EXTENSION_INFO", {});
+      if (
+        extensionInfo.version !== REQUIRED_EXTENSION_VERSION ||
+        extensionInfo.protocolVersion !== REQUIRED_EXTENSION_PROTOCOL_VERSION
+      ) {
+        throw new Error(`This dashboard requires KIET Auth Bridge v${REQUIRED_EXTENSION_VERSION}. Please install the current extension.`);
+      }
+
+      const token = window.prompt(
+        "Paste your KIET session token. Open KIET ERP in another tab, sign in, then copy authenticationtoken from DevTools > Application > Local Storage.",
+      );
+      if (!token) return;
+      saveKietSession(token);
+      setExtensionDetected(true);
+      await syncDashboard();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }
@@ -623,7 +629,7 @@ function App() {
       setStreakLoading(false);
       setLoadState("idle");
       setIsSyncingFuture(false);
-      window.location.href = "https://kiet.cybervidya.net/?action=logout";
+      setExtensionDetected(false);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }
@@ -865,7 +871,7 @@ function App() {
   );
 }
 
-export function SetupCard({ hasData }: { hasData: boolean }) {
+export function SetupCard({ hasData, onConnect }: { hasData: boolean; onConnect: () => void }) {
   return (
     <section
       className="premium-panel rise-in"
@@ -892,7 +898,7 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
           Get connected
         </h2>
         <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6 }}>
-          Install the KIET extension once, then track attendance here.
+          Install KIET Auth Bridge v0.1.4, then add your current KIET ERP session token to connect.
         </p>
       </div>
 
@@ -900,11 +906,9 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
         type="button"
         className="action-button action-button--primary"
         style={{ ...primaryButtonStyle(false), padding: "14px 28px", alignSelf: "start", justifySelf: "start", fontSize: 15 }}
-        onClick={() => {
-          window.open("/bunk-helper-extension.zip?v=0.1.1", "_blank");
-        }}
+        onClick={onConnect}
       >
-        Download extension
+        Connect with v0.1.4
       </button>
 
       <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
@@ -928,26 +932,12 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
               lineHeight: 1.5,
             }}
           >
-            <li><strong>Download the extension</strong>.</li>
-            <li><strong>Extract the ZIP</strong> to a folder you will keep.</li>
-            <li>
-              Open{" "}
-              <code
-                style={{
-                  background: "var(--bg-section)",
-                  padding: "4px 8px",
-                  borderRadius: 6,
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                }}
-              >
-                chrome://extensions/
-              </code>
-              .
-            </li>
-            <li>Turn on <strong>Developer Mode</strong>.</li>
-            <li>Click <strong>Load unpacked</strong>.</li>
-            <li><strong>Select the folder that contains <code>manifest.json</code></strong>.</li>
+            <li><a href="/bunk-helper-extension.zip?v=0.1.4" download><strong>Download KIET Auth Bridge v0.1.4</strong></a> and load it in Chrome.</li>
+            <li>Open <code>chrome://extensions</code>, turn on <strong>Developer Mode</strong>, then click <strong>Load unpacked</strong> and select the extracted extension folder.</li>
+            <li>Sign in at <a href="https://kiet.cybervidya.net/" target="_blank" rel="noreferrer">KIET ERP</a>.</li>
+            <li>Open browser DevTools, then go to <strong>Application → Local Storage → kiet.cybervidya.net</strong>.</li>
+            <li>Copy the value named <code>authenticationtoken</code>.</li>
+            <li>Click <strong>Connect KIET</strong> above and paste it. It remains only in this browser.</li>
           </ol>
         </div>
       </div>

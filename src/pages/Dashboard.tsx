@@ -227,7 +227,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
       </section>
 
       {(!data.extensionDetected || !data.attendance) ? (
-        <SetupCard hasData={!!data.attendance} />
+        <SetupCard hasData={!!data.attendance} onConnect={handlers.handleConnectClick} />
       ) : (
         <>
           <section
