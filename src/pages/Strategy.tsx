@@ -174,19 +174,16 @@ export interface StrategyHandlers {
 
 export function Strategy({ data, handlers }: { data: StrategyData; handlers: StrategyHandlers }) {
   const FUTURE_WEEKS_TO_FETCH = 12;
-  const [selectedLeaveRescueDates, setSelectedLeaveRescueDates] = useState<Set<string>>(new Set());
-  const leaveRescueDays = useMemo<LeaveRescueDay[]>(() => {
+  const [medicalLeaveStartDate, setMedicalLeaveStartDate] = useState("");
+  const [medicalLeaveEndDate, setMedicalLeaveEndDate] = useState("");
+  const allLeaveRescueDays = useMemo<LeaveRescueDay[]>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const start = new Date(today);
-    start.setDate(start.getDate() - 28);
-
     const todayKey = formatIsoDate(today);
-    const startKey = formatIsoDate(start);
 
     return Object.values(data.streakDayData)
-      .filter((day) => day.total > 0 && day.dateKey >= startKey && day.dateKey < todayKey)
+      .filter((day) => day.total > 0 && day.dateKey < todayKey)
       .map((day) => {
         const missed = Math.max(0, day.total - day.attended);
 
@@ -207,9 +204,34 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
           right.dateKey.localeCompare(left.dateKey),
       );
   }, [data.streakDayData]);
+  const leaveRescueDays = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(start.getDate() - 28);
+    const startKey = formatIsoDate(start);
+
+    return allLeaveRescueDays.filter((day) => day.dateKey >= startKey);
+  }, [allLeaveRescueDays]);
+  const medicalLeaveDateBounds = useMemo(() => {
+    const dateKeys = Object.values(data.streakDayData)
+      .map((day) => day.dateKey)
+      .filter((dateKey) => /^\d{4}-\d{2}-\d{2}$/.test(dateKey))
+      .sort();
+
+    return {
+      min: dateKeys[0] ?? "",
+      max: dateKeys[dateKeys.length - 1] ?? "",
+    };
+  }, [data.streakDayData]);
   const selectedLeaveRescueDays = useMemo(
-    () => leaveRescueDays.filter((day) => selectedLeaveRescueDates.has(day.dateKey)),
-    [leaveRescueDays, selectedLeaveRescueDates],
+    () =>
+      medicalLeaveStartDate && medicalLeaveEndDate
+        ? allLeaveRescueDays.filter(
+            (day) => day.dateKey >= medicalLeaveStartDate && day.dateKey <= medicalLeaveEndDate,
+          )
+        : [],
+    [allLeaveRescueDays, medicalLeaveEndDate, medicalLeaveStartDate],
   );
   const featuredLeaveRescueDays = leaveRescueDays.slice(0, 3);
   const extraLeaveRescueDays = leaveRescueDays.slice(3);
@@ -288,22 +310,13 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
     selectedLeaveRescueDays,
   ]);
 
-  function handleLeaveRescueToggle(dateKey: string) {
-    setSelectedLeaveRescueDates((previous) => {
-      const next = new Set(previous);
-
-      if (next.has(dateKey)) {
-        next.delete(dateKey);
-      } else {
-        next.add(dateKey);
-      }
-
-      return next;
-    });
+  function setMedicalLeaveRange(startDate: string, endDate: string) {
+    setMedicalLeaveStartDate(startDate);
+    setMedicalLeaveEndDate(endDate);
   }
 
   function clearLeaveRescueSelection() {
-    setSelectedLeaveRescueDates(new Set());
+    setMedicalLeaveRange("", "");
   }
 
   return (
@@ -623,8 +636,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
             <EmptyMessage message="Loading recent attendance..." />
           ) : !data.streakIsReliable && Object.keys(data.streakDayData).length === 0 ? (
             <EmptyMessage message="Recent attendance is not available right now." />
-          ) : leaveRescueDays.length === 0 ? (
-            <EmptyMessage message="No missed classes in the last 4 weeks." />
+          ) : allLeaveRescueDays.length === 0 ? (
+            <EmptyMessage message="No recorded absences are available for a medical-leave calculation." />
           ) : (
             <div style={{ display: "grid", gap: 18 }}>
               <div
@@ -636,7 +649,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                 }}
               >
                 <div style={{ color: "var(--text-secondary)", fontSize: 14, maxWidth: "72ch" }}>
-                  Turn missed days into recovery opportunities.
+                  Choose your medical leave period. For this preview only, recorded absences in that range are treated as present.
                 </div>
                 <div
                   className="status-badge status-badge--neutral"
@@ -647,7 +660,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                     fontWeight: 700,
                   }}
                 >
-                  {leaveRescueDays.length} day{leaveRescueDays.length === 1 ? "" : "s"} found
+                  {allLeaveRescueDays.length} missed day{allLeaveRescueDays.length === 1 ? "" : "s"} found
                 </div>
                 {selectedLeaveRescueDays.length > 0 && (
                   <div
@@ -665,22 +678,66 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
               </div>
 
               <div
+                className="surface-card"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: 12,
+                  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                  gap: 14,
+                  padding: 16,
+                  borderRadius: 16,
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-card-subtle)",
                 }}
+              >
+                <label style={{ display: "grid", gap: 7, fontWeight: 700 }}>
+                  Medical leave start
+                  <input
+                    type="date"
+                    value={medicalLeaveStartDate}
+                    min={medicalLeaveDateBounds.min || undefined}
+                    max={medicalLeaveEndDate || medicalLeaveDateBounds.max || undefined}
+                    onChange={(event) => {
+                      const startDate = event.target.value;
+                      setMedicalLeaveStartDate(startDate);
+                      if (medicalLeaveEndDate && startDate > medicalLeaveEndDate) {
+                        setMedicalLeaveEndDate(startDate);
+                      }
+                    }}
+                    style={{ font: "inherit", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-primary)" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 7, fontWeight: 700 }}>
+                  Medical leave end
+                  <input
+                    type="date"
+                    value={medicalLeaveEndDate}
+                    min={medicalLeaveStartDate || medicalLeaveDateBounds.min || undefined}
+                    max={medicalLeaveDateBounds.max || undefined}
+                    onChange={(event) => {
+                      const endDate = event.target.value;
+                      setMedicalLeaveEndDate(endDate);
+                      if (medicalLeaveStartDate && endDate < medicalLeaveStartDate) {
+                        setMedicalLeaveStartDate(endDate);
+                      }
+                    }}
+                    style={{ font: "inherit", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-primary)" }}
+                  />
+                </label>
+              </div>
+
+              {leaveRescueDays.length > 0 && <div
+                style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}
               >
                 {featuredLeaveRescueDays.map((day) => {
                   const theme = getLeaveRescueTheme(day.intensity);
-                  const isSelected = selectedLeaveRescueDates.has(day.dateKey);
+                  const isSelected = Boolean(medicalLeaveStartDate && medicalLeaveEndDate && day.dateKey >= medicalLeaveStartDate && day.dateKey <= medicalLeaveEndDate);
 
                   return (
                     <button
                       type="button"
                       className={`standard-card interactive-row rise-in ${theme.borderClass}`}
                       key={`leave-rescue-featured-${day.dateKey}`}
-                      onClick={() => handleLeaveRescueToggle(day.dateKey)}
+                      onClick={() => setMedicalLeaveRange(day.dateKey, day.dateKey)}
                       style={{
                         display: "grid",
                         gap: 10,
@@ -747,7 +804,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                     </button>
                   );
                 })}
-              </div>
+              </div>}
 
               {extraLeaveRescueDays.length > 0 && (
                 <div style={{ display: "grid", gap: 10 }}>
@@ -755,14 +812,14 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                   <div style={{ display: "grid", gap: 8 }}>
                     {extraLeaveRescueDays.map((day) => {
                       const theme = getLeaveRescueTheme(day.intensity);
-                      const isSelected = selectedLeaveRescueDates.has(day.dateKey);
+                      const isSelected = Boolean(medicalLeaveStartDate && medicalLeaveEndDate && day.dateKey >= medicalLeaveStartDate && day.dateKey <= medicalLeaveEndDate);
 
                       return (
                         <button
                           type="button"
                           className={`standard-card interactive-row ${theme.borderClass}`}
                           key={`leave-rescue-extra-${day.dateKey}`}
-                          onClick={() => handleLeaveRescueToggle(day.dateKey)}
+                          onClick={() => setMedicalLeaveRange(day.dateKey, day.dateKey)}
                           style={{
                             display: "flex",
                             gap: 12,
@@ -854,8 +911,8 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                     <div style={{ fontWeight: 800, fontSize: 18 }}>Recovery preview</div>
                     <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
                       {selectedLeaveRescueDays.length === 0
-                        ? "Select days to preview the lift."
-                        : selectedLeaveRescueDays.map((day) => day.label).join(", ")}
+                        ? "Choose a start and end date to preview the medical-leave adjustment."
+                        : `Medical leave: ${formatDateKeyLabel(medicalLeaveStartDate)} to ${formatDateKeyLabel(medicalLeaveEndDate)}`}
                     </div>
                   </div>
                   {selectedLeaveRescueDays.length > 0 && (
@@ -874,7 +931,7 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
                 </div>
 
                 {selectedLeaveRescueDays.length === 0 ? (
-                  <EmptyMessage message="Select days to preview the impact." />
+                  <EmptyMessage message="Choose both medical leave dates to preview the impact." />
                 ) : !leaveRescueImpact || !data.overallSummary ? (
                   <EmptyMessage message="Preview is not available right now." />
                 ) : leaveRescueImpact.addedPresent === 0 ? (
