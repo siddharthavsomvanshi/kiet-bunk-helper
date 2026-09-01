@@ -10,6 +10,7 @@ import {
   INITIAL_MULTIVERSE_SCENARIO,
   getScheduleDateKey,
   getScheduleEntryKey,
+  formatDateKeyLabel,
 } from "../utils/multiverse";
 import { formatScheduleDay, formatScheduleTime } from "../utils/date";
 
@@ -387,7 +388,7 @@ export function MultiversePage({ data }: { data: ReadOnlyAttendanceSnapshot }) {
                       ) : (
                         sortedFutureDateKeys.map((dateKey) => (
                           <option key={dateKey} value={dateKey}>
-                            {formatScheduleDay(dateKey)}
+                            {formatDateKeyLabel(dateKey)}
                           </option>
                         ))
                       )}

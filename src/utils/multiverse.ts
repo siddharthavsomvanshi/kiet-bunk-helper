@@ -144,7 +144,7 @@ export function getScheduleDateKey(entry: ScheduleEntry): string {
   ].join("-");
 }
 
-function formatDateKeyLabel(dateKey: string): string {
+export function formatDateKeyLabel(dateKey: string): string {
   if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return dateKey;
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Intl.DateTimeFormat("en-IN", {
@@ -189,7 +189,11 @@ export function getMatchingClassesForSubject(
  * 3. End date of hypothetical medical leave (if enableMedicalLeave is true and non-empty)
  * 4. Current date (today)
  */
-export function determineResultDate(scenario: MultiverseScenario, todayKey: string): { dateKey: string; isAutomatic: boolean } {
+export function determineResultDate(
+  scenario: MultiverseScenario,
+  todayKey: string,
+  futureClasses: ScheduleEntry[] = [],
+): { dateKey: string; isAutomatic: boolean } {
   if (scenario.enableTargetDate && scenario.explicitTargetDate) {
     return { dateKey: scenario.explicitTargetDate, isAutomatic: false };
   }
@@ -201,17 +205,9 @@ export function determineResultDate(scenario: MultiverseScenario, todayKey: stri
       bunkDateKeys.push(...scenario.selectedBunkDates);
     } else {
       for (const itemKey of scenario.selectedBunkClassKeys) {
-        const parts = itemKey.split(":");
-        if (parts.length >= 3) {
-          const startDateStr = parts[2];
-          if (startDateStr) {
-            try {
-              const dKey = formatIsoDate(parseKietDateTime(startDateStr));
-              bunkDateKeys.push(dKey);
-            } catch {
-              // ignore
-            }
-          }
+        const matchingEntry = futureClasses.find((c) => getScheduleEntryKey(c) === itemKey);
+        if (matchingEntry) {
+          bunkDateKeys.push(getScheduleDateKey(matchingEntry));
         }
       }
     }
@@ -242,7 +238,7 @@ export function calculateMultiverseSimulation(
   today.setHours(0, 0, 0, 0);
   const todayKey = formatIsoDate(today);
 
-  const { dateKey: resultDateKey, isAutomatic } = determineResultDate(scenario, todayKey);
+  const { dateKey: resultDateKey, isAutomatic } = determineResultDate(scenario, todayKey, snapshot.futureClasses);
   const resultDateLabel = formatDateKeyLabel(resultDateKey);
 
   const bunkDatesSet = new Set(scenario.enableBunking && scenario.bunkType === "entire_day" ? scenario.selectedBunkDates : []);
