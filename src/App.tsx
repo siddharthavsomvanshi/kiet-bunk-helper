@@ -363,6 +363,10 @@ function App() {
     );
 
     return {
+      id: "overall",
+      title: "Overall Attendance",
+      courseCode: "OVERALL",
+      componentName: "Overall",
       currentPercentage: overallSummary.percentage,
       selectedClassCount: plan.selectedClassCount,
       attendedClassCount: plan.attendedClassCount,
@@ -970,10 +974,12 @@ export function ProgressBar({
   label,
   percentage,
   healthy,
+  showThreshold = false,
 }: {
   label: string;
   percentage: number;
   healthy: boolean;
+  showThreshold?: boolean;
 }) {
   return (
     <div className="progress-meter" style={{ display: "grid", gap: 8 }}>
@@ -993,6 +999,7 @@ export function ProgressBar({
       <div
         className="progress-track"
         style={{
+          position: "relative",
           height: 12,
           borderRadius: 999,
           background: "var(--bg-section)",
@@ -1006,6 +1013,21 @@ export function ProgressBar({
             height: "100%",
           }}
         />
+        {showThreshold && (
+          <div
+            title="75% Attendance Threshold"
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: "75%",
+              width: 2,
+              background: "var(--text-primary)",
+              opacity: 0.6,
+              zIndex: 2,
+            }}
+          />
+        )}
       </div>
     </div>
   );
