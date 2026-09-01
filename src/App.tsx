@@ -39,6 +39,8 @@ import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 import { Analytics } from "@vercel/analytics/react";
 import { Panel, EmptyMessage } from "./components/UI";
 
+import { MultiversePage } from "./pages/Multiverse";
+
 const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const ExamMode = lazy(() => import('./pages/ExamMode').then(m => ({ default: m.ExamMode })));
@@ -789,6 +791,16 @@ function App() {
     currentWeekFullClasses,
   };
 
+  const multiverseData = {
+    attendance,
+    subjectSummaries,
+    overallSummary,
+    streakDayData,
+    streakSubjectAbsencesByDate,
+    futureClasses,
+    bunkableDays,
+  };
+
   return (
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
@@ -798,6 +810,7 @@ function App() {
             <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
             <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
             <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+            <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
             <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
             <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
             <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
@@ -846,6 +859,7 @@ function App() {
             </Suspense>
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
+          <Route path="/multiverse" element={<MultiversePage data={multiverseData} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
           <Route path="/history" element={<AttendanceHistory studentContext={studentContext} subjects={subjectSummaries} knownSchedule={currentWeekFullClasses} />} />
           <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode /></Suspense>} />
