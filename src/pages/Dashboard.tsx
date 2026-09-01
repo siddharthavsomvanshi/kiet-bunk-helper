@@ -68,33 +68,21 @@ function formatClassCount(count: number) {
 function getSubjectAttendanceGuidance(subject: SubjectSummary) {
   if (subject.percentage < 75) {
     return {
-      eyebrow: "Recovery needed",
-      title: `You have to attend ${formatClassCount(subject.classesNeeded)} to reach 75%.`,
-      detail: "Try not to miss any classes until this subject is back in the safe zone.",
+      text: `● Attend ${formatClassCount(subject.classesNeeded)} to reach 75%.`,
       tone: "var(--danger)",
-      background: "var(--danger-soft)",
-      border: "var(--danger)",
     };
   }
 
   if (subject.safeBunks > 0) {
     return {
-      eyebrow: "Attendance buffer",
-      title: `You can miss ${formatClassCount(subject.safeBunks)} and still stay around 75%.`,
-      detail: "Missing more than that would pull this subject below 75%.",
+      text: `✓ You can miss ${formatClassCount(subject.safeBunks)}.`,
       tone: "var(--success)",
-      background: "var(--success-soft)",
-      border: "var(--success)",
     };
   }
 
   return {
-    eyebrow: "At the edge",
-    title: "Try not to miss any classes.",
-    detail: "Missing even one more class would drop this subject below 75%.",
+    text: `● Try not to miss any class.`,
     tone: "var(--warning)",
-    background: "var(--warning-soft)",
-    border: "var(--warning)",
   };
 }
 
@@ -421,42 +409,14 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
                         <div
                           style={{
-                            display: "grid",
-                            gap: 6,
-                            padding: 14,
-                            borderRadius: 16,
-                            border: `1px solid ${attendanceGuidance.border}`,
-                            background: attendanceGuidance.background,
+                            color: attendanceGuidance.tone,
+                            fontSize: 14,
+                            fontWeight: 600,
+                            marginTop: 2,
+                            marginBottom: 4,
                           }}
                         >
-                          <div
-                            style={{
-                              color: attendanceGuidance.tone,
-                              fontSize: 11,
-                              fontWeight: 800,
-                              letterSpacing: "0.08em",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {attendanceGuidance.eyebrow}
-                          </div>
-                          <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                            {attendanceGuidance.title}
-                          </div>
-                          <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                            {attendanceGuidance.detail}
-                          </div>
-                        </div>
-
-                        <div style={{ display: "grid", gap: 10 }}>
-                          <button
-                            className="action-button action-button--secondary"
-                            type="button"
-                            onClick={() => handlers.openDetailsOverlay(subject.id)}
-                            style={secondaryButtonStyle}
-                          >
-                            View details
-                          </button>
+                          {attendanceGuidance.text}
                         </div>
 
                         {subject.upcomingCount > 0 && (
@@ -619,31 +579,12 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                 {activeOverlayGuidance && (
                   <div
                     style={{
-                      display: "grid",
-                      gap: 6,
-                      padding: 14,
-                      borderRadius: 16,
-                      border: `1px solid ${activeOverlayGuidance.border}`,
-                      background: activeOverlayGuidance.background,
+                      color: activeOverlayGuidance.tone,
+                      fontSize: 14,
+                      fontWeight: 600,
                     }}
                   >
-                    <div
-                      style={{
-                        color: activeOverlayGuidance.tone,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {activeOverlayGuidance.eyebrow}
-                    </div>
-                    <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                      {activeOverlayGuidance.title}
-                    </div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                      {activeOverlayGuidance.detail}
-                    </div>
+                    {activeOverlayGuidance.text}
                   </div>
                 )}
               </div>
@@ -871,31 +812,12 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                   {activeOverlayGuidance && (
                     <div
                       style={{
-                        display: "grid",
-                        gap: 6,
-                        padding: 14,
-                        borderRadius: 16,
-                        border: `1px solid ${activeOverlayGuidance.border}`,
-                        background: activeOverlayGuidance.background,
+                        color: activeOverlayGuidance.tone,
+                        fontSize: 14,
+                        fontWeight: 600,
                       }}
                     >
-                      <div
-                        style={{
-                          color: activeOverlayGuidance.tone,
-                          fontSize: 11,
-                          fontWeight: 800,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {activeOverlayGuidance.eyebrow}
-                      </div>
-                      <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                        {activeOverlayGuidance.title}
-                      </div>
-                      <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                        {activeOverlayGuidance.detail}
-                      </div>
+                      {activeOverlayGuidance.text}
                     </div>
                   )}
 
