@@ -219,7 +219,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
             {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
           </section>
-          <SetupCard hasData={!!data.attendance} onConnect={handlers.handleConnectClick} />
+          <SetupCard hasData={!!data.attendance} />
         </>
       ) : (
         <>
