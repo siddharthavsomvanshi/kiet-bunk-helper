@@ -1080,7 +1080,11 @@ export function Strategy({ data, handlers }: { data: StrategyData; handlers: Str
       </section>
 
       <section style={{ display: "grid", gap: 14 }}>
-        <RedemptionArc data={data.overallSummary} schedule={data.bunkableDays} />
+        <RedemptionArc
+          data={data.overallSummary}
+          schedule={data.bunkableDays}
+          subjectSummaries={data.subjectSummaries}
+        />
       </section>
     </>
   );
