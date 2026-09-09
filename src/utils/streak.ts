@@ -281,15 +281,6 @@ export async function fetchGlobalDatewiseAttendance(
     }
   }
 
-  if (hadFailure) {
-    return {
-      data: {},
-      subjectAbsencesByDate: {},
-      isReliable: false,
-      lastUpdated: Date.now(),
-    };
-  }
-
   const mergedData = {
     ...cachedPastPayload.data,
     ...freshData,
@@ -300,25 +291,30 @@ export async function fetchGlobalDatewiseAttendance(
   );
   const lastUpdated = Date.now();
 
-  try {
-    const cachePayload: StreakCachePayload = {
-      data: getPastOnlyData(mergedData, todayKey),
-      subjectAbsencesByDate: getPastOnlySubjectAbsencesByDate(
-        mergedSubjectAbsencesByDate,
-        todayKey,
-      ),
-      lastUpdated,
-    };
+  // Do not overwrite a complete cached history with a partial refresh. The
+  // returned records are still useful to Leave Rescue, while `isReliable`
+  // prevents the stricter streak metric from treating them as complete.
+  if (!hadFailure) {
+    try {
+      const cachePayload: StreakCachePayload = {
+        data: getPastOnlyData(mergedData, todayKey),
+        subjectAbsencesByDate: getPastOnlySubjectAbsencesByDate(
+          mergedSubjectAbsencesByDate,
+          todayKey,
+        ),
+        lastUpdated,
+      };
 
-    localStorage.setItem(cacheKey, JSON.stringify(cachePayload));
-  } catch {
-    // Ignore cache write failures and keep the fresh data in memory.
+      localStorage.setItem(cacheKey, JSON.stringify(cachePayload));
+    } catch {
+      // Ignore cache write failures and keep the fresh data in memory.
+    }
   }
 
   return {
     data: mergedData,
     subjectAbsencesByDate: mergedSubjectAbsencesByDate,
-    isReliable: true,
+    isReliable: !hadFailure,
     lastUpdated,
   };
 }

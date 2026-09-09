@@ -37,10 +37,34 @@ export function getWeekRange(baseDate: Date, weekOffset = 0) {
 }
 
 export function parseKietDateTime(value: string): Date {
+  if (!value || typeof value !== "string") {
+    return new Date();
+  }
+
+  // ISO date format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const [datePart, timePart] = value.split(/[T ]/);
+    const [year, month, day] = datePart.split("-").map(Number);
+    if (timePart && timePart.includes(":")) {
+      const [hours, minutes, seconds] = timePart.split(":").map(Number);
+      return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  // KIET date format: DD/MM/YYYY HH:MM:SS
   const [datePart, timePart] = value.split(" ");
-  const [day, month, year] = datePart.split("/").map(Number);
-  const [hours, minutes, seconds] = timePart.split(":").map(Number);
-  return new Date(year, month - 1, day, hours, minutes, seconds);
+  if (datePart && datePart.includes("/")) {
+    const [day, month, year] = datePart.split("/").map(Number);
+    if (timePart && timePart.includes(":")) {
+      const [hours, minutes, seconds] = timePart.split(":").map(Number);
+      return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 export function getUpcomingClasses(entries: ScheduleEntry[]): ScheduleEntry[] {

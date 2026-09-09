@@ -68,33 +68,21 @@ function formatClassCount(count: number) {
 function getSubjectAttendanceGuidance(subject: SubjectSummary) {
   if (subject.percentage < 75) {
     return {
-      eyebrow: "Recovery needed",
-      title: `You have to attend ${formatClassCount(subject.classesNeeded)} to reach 75%.`,
-      detail: "Try not to miss any classes until this subject is back in the safe zone.",
+      text: `● Attend ${formatClassCount(subject.classesNeeded)} to reach 75%.`,
       tone: "var(--danger)",
-      background: "var(--danger-soft)",
-      border: "var(--danger)",
     };
   }
 
   if (subject.safeBunks > 0) {
     return {
-      eyebrow: "Attendance buffer",
-      title: `You can miss ${formatClassCount(subject.safeBunks)} and still stay around 75%.`,
-      detail: "Missing more than that would pull this subject below 75%.",
+      text: `✓ You can miss ${formatClassCount(subject.safeBunks)}.`,
       tone: "var(--success)",
-      background: "var(--success-soft)",
-      border: "var(--success)",
     };
   }
 
   return {
-    eyebrow: "At the edge",
-    title: "Try not to miss any classes.",
-    detail: "Missing even one more class would drop this subject below 75%.",
+    text: `● Try not to miss any class.`,
     tone: "var(--warning)",
-    background: "var(--warning-soft)",
-    border: "var(--warning)",
   };
 }
 
@@ -123,238 +111,247 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
   return (
     <>
-      <section
-        className="standard-card rise-in border-l-primary"
-        style={{
-          display: "grid",
-          gap: 18,
-        }}
-      >
-        <span
-          className="brand-kicker status-badge status-badge--neutral"
-          style={{
-            width: "fit-content",
-            padding: "6px 12px",
-            borderRadius: 999,
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          Attendance dashboard
-        </span>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          <h1
-            className="display-title"
-            style={{ margin: 0, fontSize: "clamp(2.5rem, 6vw, 4.9rem)", lineHeight: 0.95 }}
-          >
-            Attendance, simplified.
-          </h1>
-          <p
-            className="hero-copy"
-            style={{ margin: 0, maxWidth: 760, color: "var(--text-secondary)", fontSize: 18 }}
-          >
-            Everything you need to manage attendance in one place.
-          </p>
-        </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-          <button
-            className="action-button action-button--primary"
-            type="button"
-            onClick={handlers.handleConnectClick}
-            disabled={!data.extensionDetected}
-            style={primaryButtonStyle(!data.extensionDetected)}
-          >
-            Connect KIET
-          </button>
-          <button
-            className="action-button action-button--secondary"
-            type="button"
-            onClick={handlers.syncDashboard}
-            style={secondaryButtonStyle}
-          >
-            Refresh
-          </button>
-          <button
-            className="action-button action-button--secondary"
-            type="button"
-            onClick={handlers.handleClearSession}
-            style={secondaryButtonStyle}
-          >
-            Log out
-          </button>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 12,
-          }}
-        >
-          <StatusCard
-            title="Connection"
-            value={data.extensionDetected ? "Ready" : "Not ready"}
-            tone={data.extensionDetected ? "var(--success)" : "var(--danger)"}
-          />
-          <StatusCard
-            title="Sync status"
-            value={
-              data.loadState === "ready"
-                ? "Synced"
-                : data.loadState === "loading"
-                  ? "Refreshing"
-                  : data.loadState === "error"
-                    ? "Needs attention"
-                    : "Waiting"
-            }
-            tone={data.loadState === "error" ? "var(--danger)" : "var(--info)"}
-          />
-          <StatusCard
-            title="Last sync"
-            value={formatCapturedAt(data.sessionCapturedAt)}
-            tone="var(--text-primary)"
-          />
-          <StatusCard
-            title="Up next"
-            value={String(data.upcomingClasses.length)}
-            tone="var(--text-primary)"
-          />
-        </div>
-
-        {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
-      </section>
-
       {(!data.extensionDetected || !data.attendance) ? (
-        <SetupCard hasData={!!data.attendance} />
-      ) : (
         <>
           <section
+            className="standard-card rise-in border-l-primary"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12,
+              gap: 18,
             }}
           >
-            <StatusCard title="Student" value={data.attendance.fullName} tone="var(--text-primary)" />
-            <StatusCard
-              title="Registration"
-              value={data.attendance.registrationNumber}
-              tone="var(--text-primary)"
-            />
-            <StatusCard
-              title="Branch"
-              value={`${data.attendance.branchShortName} - ${data.attendance.sectionName}`}
-              tone="var(--text-primary)"
-            />
-            <StatusCard title="Semester" value={data.attendance.semesterName} tone="var(--text-primary)" />
+            <span
+              className="brand-kicker status-badge status-badge--neutral"
+              style={{
+                width: "fit-content",
+                padding: "6px 12px",
+                borderRadius: 999,
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              Attendance dashboard
+            </span>
+
+            <div style={{ display: "grid", gap: 12 }}>
+              <h1
+                className="display-title"
+                style={{ margin: 0, fontSize: "clamp(2.5rem, 6vw, 4.9rem)", lineHeight: 0.95 }}
+              >
+                Attendance, simplified.
+              </h1>
+              <p
+                className="hero-copy"
+                style={{ margin: 0, maxWidth: 760, color: "var(--text-secondary)", fontSize: 18 }}
+              >
+                Everything you need to manage attendance in one place.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+              <button
+                className="action-button action-button--primary"
+                type="button"
+                onClick={handlers.handleConnectClick}
+                disabled={!data.extensionDetected}
+                style={primaryButtonStyle(!data.extensionDetected)}
+              >
+                Connect KIET
+              </button>
+              <button
+                className="action-button action-button--secondary"
+                type="button"
+                onClick={handlers.syncDashboard}
+                style={secondaryButtonStyle}
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <StatusCard
+                title="Connection"
+                value={data.extensionDetected ? "Ready" : "Not ready"}
+                tone={data.extensionDetected ? "var(--success)" : "var(--danger)"}
+              />
+              <StatusCard
+                title="Sync status"
+                value={
+                  data.loadState === "ready"
+                    ? "Synced"
+                    : data.loadState === "loading"
+                      ? "Refreshing"
+                      : data.loadState === "error"
+                        ? "Needs attention"
+                        : "Waiting"
+                }
+                tone={data.loadState === "error" ? "var(--danger)" : "var(--info)"}
+              />
+              <StatusCard
+                title="Last sync"
+                value={formatCapturedAt(data.sessionCapturedAt)}
+                tone="var(--text-primary)"
+              />
+              <StatusCard
+                title="Up next"
+                value={String(data.upcomingClasses.length)}
+                tone="var(--text-primary)"
+              />
+            </div>
+
+            {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
           </section>
+          <SetupCard hasData={!!data.attendance} />
+        </>
+      ) : (
+        <>
+          {/* COMPACT STUDENT IDENTITY HEADER */}
+          <section
+            className="standard-card rise-in border-l-primary"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+              padding: "16px 20px",
+            }}
+          >
+            <div style={{ display: "grid", gap: 4 }}>
+              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>
+                {data.attendance.fullName}
+              </h1>
+              <div style={{ color: "var(--text-secondary)", fontSize: 14, fontWeight: 600 }}>
+                {data.attendance.registrationNumber} • {data.attendance.branchShortName}-{data.attendance.sectionName} • {data.attendance.semesterName}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                className="action-button action-button--secondary"
+                type="button"
+                onClick={handlers.syncDashboard}
+                style={{ ...secondaryButtonStyle, padding: "8px 16px", fontSize: 13 }}
+                title="Refresh attendance"
+              >
+                Refresh
+              </button>
+              <button
+                className="action-button action-button--secondary"
+                type="button"
+                onClick={handlers.handleClearSession}
+                style={{ ...secondaryButtonStyle, padding: "8px 16px", fontSize: 13 }}
+              >
+                Log out
+              </button>
+            </div>
+          </section>
+
+          {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
+
+          {/* PROMINENT OVERALL ATTENDANCE CARD */}
+          {data.overallSummary && (
+            <section
+              className="standard-card rise-in border-l-primary"
+              style={{
+                display: "grid",
+                gap: 16,
+                textAlign: "center",
+                padding: "26px 22px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "var(--text-muted)",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                }}
+              >
+                ATTENDANCE
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: "clamp(3.2rem, 7vw, 4.8rem)",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    letterSpacing: "-0.04em",
+                    color: data.overallSummary.percentage >= 75 ? "var(--success)" : "var(--danger)",
+                  }}
+                >
+                  {data.overallSummary.percentage.toFixed(1)}%
+                </div>
+                <div style={{ color: "var(--text-muted)", fontSize: 15, fontWeight: 600, marginTop: 6 }}>
+                  Overall attendance
+                </div>
+              </div>
+
+              <div style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 600 }}>
+                Current: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.percentage.toFixed(1)}%</strong>
+                {"   |   "}
+                If you attend all: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.projectedPercentage.toFixed(1)}%</strong>
+              </div>
+
+              <div style={{ justifySelf: "center" }}>
+                <span
+                  className="status-badge status-badge--info"
+                  style={{ padding: "8px 16px", borderRadius: 999, fontSize: 14, fontWeight: 700 }}
+                >
+                  {data.overallSummary.upcomingCount} classes remaining
+                </span>
+              </div>
+
+              <div style={{ marginTop: 6, textAlign: "left" }}>
+                <ProgressBar
+                  label="Attendance Progress (Target 75%)"
+                  percentage={data.overallSummary.percentage}
+                  healthy={data.overallSummary.percentage >= 75}
+                  showThreshold={true}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                  gap: 10,
+                  color: "var(--text-secondary)",
+                  fontSize: 14,
+                  marginTop: 6,
+                }}
+              >
+                <Metric label="Present" value={String(data.overallSummary.present)} />
+                <Metric label="Total" value={String(data.overallSummary.total)} />
+                <Metric
+                  label="If attended"
+                  value={`${data.overallSummary.projectedPresent}/${data.overallSummary.projectedTotal}`}
+                />
+                <Metric label="Selected" value={String(data.overallSummary.plannedBunkCount)} />
+                <Metric label="Remaining" value={String(data.overallSummary.upcomingCount)} />
+                <Metric
+                  label="Streak"
+                  value={formatStreakMetricValue(data.streakResult, data.streakLoading)}
+                />
+              </div>
+            </section>
+          )}
 
           <section style={{ display: "grid", gap: 20 }}>
             <Panel
-              title="Attendance overview"
+              title="Subject attendance overview"
               subtitle="See what is safe, risky, and worth fixing first."
             >
               {data.subjectSummaries.length === 0 ? (
                 <EmptyMessage message="Connect KIET and refresh to load your attendance." />
               ) : (
                 <div style={{ display: "grid", gap: 16 }}>
-                  <div
-                    className="overview-lead-grid"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                      gap: 14,
-                      alignItems: "start",
-                    }}
-                  >
-                  {data.overallSummary && (
-                    <div
-                      className="standard-card rise-in border-l-primary"
-                      style={{
-                        display: "grid",
-                        gap: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          alignItems: "baseline",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 160 }}>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>Overall attendance</div>
-                          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
-                            Across all subjects.
-                          </div>
-                        </div>
-                        <div style={{ display: "grid", gap: 4, justifyItems: "end" }}>
-                          <strong
-                            style={{
-                              color:
-                                data.overallSummary.percentage >= 75
-                                  ? "var(--success)"
-                                  : "var(--danger)",
-                            }}
-                          >
-                            Current: {data.overallSummary.percentage.toFixed(1)}%
-                          </strong>
-                          <span
-                            style={{
-                              color:
-                                data.overallSummary.projectedPercentage >= 75
-                                  ? "var(--success)"
-                                  : "var(--danger)",
-                              fontSize: 13,
-                              fontWeight: 700,
-                            }}
-                          >
-                            If you attend the rest: {data.overallSummary.projectedPercentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <ProgressBar
-                        label="Current"
-                        percentage={data.overallSummary.percentage}
-                        healthy={data.overallSummary.percentage >= 75}
-                      />
-                      <ProgressBar
-                        label={`If you attend the rest (${data.overallSummary.upcomingCount} left)`}
-                        percentage={data.overallSummary.projectedPercentage}
-                        healthy={data.overallSummary.projectedPercentage >= 75}
-                      />
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                          gap: 10,
-                          color: "var(--text-secondary)",
-                          fontSize: 14,
-                        }}
-                      >
-                        <Metric label="Present" value={String(data.overallSummary.present)} />
-                        <Metric label="Total" value={String(data.overallSummary.total)} />
-                        <Metric
-                          label="If attended"
-                          value={`${data.overallSummary.projectedPresent}/${data.overallSummary.projectedTotal}`}
-                        />
-                        <Metric label="Selected" value={String(data.overallSummary.plannedBunkCount)} />
-                        <Metric label="Left" value={String(data.overallSummary.upcomingCount)} />
-                        <Metric
-                          label="Streak"
-                          value={formatStreakMetricValue(data.streakResult, data.streakLoading)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  </div>
-
                   <div
                     className="overview-subject-grid"
                     style={{
@@ -412,42 +409,14 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
                         <div
                           style={{
-                            display: "grid",
-                            gap: 6,
-                            padding: 14,
-                            borderRadius: 16,
-                            border: `1px solid ${attendanceGuidance.border}`,
-                            background: attendanceGuidance.background,
+                            color: attendanceGuidance.tone,
+                            fontSize: 14,
+                            fontWeight: 600,
+                            marginTop: 2,
+                            marginBottom: 4,
                           }}
                         >
-                          <div
-                            style={{
-                              color: attendanceGuidance.tone,
-                              fontSize: 11,
-                              fontWeight: 800,
-                              letterSpacing: "0.08em",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {attendanceGuidance.eyebrow}
-                          </div>
-                          <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                            {attendanceGuidance.title}
-                          </div>
-                          <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                            {attendanceGuidance.detail}
-                          </div>
-                        </div>
-
-                        <div style={{ display: "grid", gap: 10 }}>
-                          <button
-                            className="action-button action-button--secondary"
-                            type="button"
-                            onClick={() => handlers.openDetailsOverlay(subject.id)}
-                            style={secondaryButtonStyle}
-                          >
-                            View details
-                          </button>
+                          {attendanceGuidance.text}
                         </div>
 
                         {subject.upcomingCount > 0 && (
@@ -610,31 +579,12 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                 {activeOverlayGuidance && (
                   <div
                     style={{
-                      display: "grid",
-                      gap: 6,
-                      padding: 14,
-                      borderRadius: 16,
-                      border: `1px solid ${activeOverlayGuidance.border}`,
-                      background: activeOverlayGuidance.background,
+                      color: activeOverlayGuidance.tone,
+                      fontSize: 14,
+                      fontWeight: 600,
                     }}
                   >
-                    <div
-                      style={{
-                        color: activeOverlayGuidance.tone,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {activeOverlayGuidance.eyebrow}
-                    </div>
-                    <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                      {activeOverlayGuidance.title}
-                    </div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                      {activeOverlayGuidance.detail}
-                    </div>
+                    {activeOverlayGuidance.text}
                   </div>
                 )}
               </div>
@@ -862,31 +812,12 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                   {activeOverlayGuidance && (
                     <div
                       style={{
-                        display: "grid",
-                        gap: 6,
-                        padding: 14,
-                        borderRadius: 16,
-                        border: `1px solid ${activeOverlayGuidance.border}`,
-                        background: activeOverlayGuidance.background,
+                        color: activeOverlayGuidance.tone,
+                        fontSize: 14,
+                        fontWeight: 600,
                       }}
                     >
-                      <div
-                        style={{
-                          color: activeOverlayGuidance.tone,
-                          fontSize: 11,
-                          fontWeight: 800,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {activeOverlayGuidance.eyebrow}
-                      </div>
-                      <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
-                        {activeOverlayGuidance.title}
-                      </div>
-                      <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                        {activeOverlayGuidance.detail}
-                      </div>
+                      {activeOverlayGuidance.text}
                     </div>
                   )}
 

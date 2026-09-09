@@ -1,14 +1,12 @@
 # KIET Attendance Dashboard
 
-Starter workspace for a KIET attendance dashboard plus Chrome extension bridge.
+Attendance dashboard for KIET ERP. It requires KIET Auth Bridge v0.1.4.
 
 ## What is included
 
 - `src/`: React + TypeScript dashboard scaffold
-- `extension/chrome/`: Manifest V3 extension with:
-  - token capture from KIET ERP
-  - service-worker-based API proxy
-  - app-to-extension message bridge
+- `api/kiet.js`: Vercel serverless proxy for KIET API calls. It receives the
+  session token only for the current request and does not persist it.
 
 ## Local app
 
@@ -24,33 +22,24 @@ Starter workspace for a KIET attendance dashboard plus Chrome extension bridge.
    npm run dev
    ```
 
-3. Open the local app, usually `http://localhost:5173`.
+3. For the full KIET connection flow locally, run it through Vercel so the
+   `/api/kiet` function is available: `npx vercel dev`.
 
-## Chrome extension
+## Connect KIET
 
-1. Open `chrome://extensions`
-2. Enable `Developer mode`
-3. Click `Load unpacked`
-4. Select the folder:
+1. Download [`bunk-helper-extension.zip`](public/bunk-helper-extension.zip), extract it, and load the folder in Chrome from `chrome://extensions` with Developer Mode enabled.
+2. Confirm the extension version is **0.1.4**. Older versions are intentionally unsupported.
+3. Sign in to [KIET ERP](https://kiet.cybervidya.net/).
+4. In browser DevTools, open **Application → Local Storage →
+   kiet.cybervidya.net**.
+5. Copy the value of `authenticationtoken`.
+6. In the dashboard, select **Connect with v0.1.4** and paste it.
 
-   ```text
-   extension/chrome
-   ```
-
-5. Return to the dashboard and click `Connect with KIET ERP`
-
-## Current flow
-
-1. Dashboard asks the extension to prepare login.
-2. User is sent to KIET ERP.
-3. Extension reads `authenticationtoken` from KIET local storage after login.
-4. Token is stored inside extension storage.
-5. Extension redirects back to the dashboard without putting the token in the URL.
-6. Dashboard asks the extension to fetch attendance and weekly schedules.
+The token stays in that browser's local storage. It is sent to the proxy only
+when fetching your data, and a fresh token is needed after KIET expires it.
 
 ## Next build steps
 
 - add daywise attendance view
 - match schedule entries to exact course components
 - add alert thresholds and richer analytics
-- package extension icons and release ZIPs

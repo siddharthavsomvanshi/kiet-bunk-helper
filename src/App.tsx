@@ -32,11 +32,14 @@ import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { Strategy } from "./pages/Strategy";
 import { CalendarPage } from "./pages/Calendar";
+import { AttendanceHistory } from "./pages/AttendanceHistory";
 import { TodayStatus } from "./pages/TodayStatus";
 import { Snitch } from "./pages/Snitch";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 import { Analytics } from "@vercel/analytics/react";
 import { Panel, EmptyMessage } from "./components/UI";
+
+import { MultiversePage } from "./pages/Multiverse";
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -360,6 +363,10 @@ function App() {
     );
 
     return {
+      id: "overall",
+      title: "Overall Attendance",
+      courseCode: "OVERALL",
+      componentName: "Overall",
       currentPercentage: overallSummary.percentage,
       selectedClassCount: plan.selectedClassCount,
       attendedClassCount: plan.attendedClassCount,
@@ -784,6 +791,16 @@ function App() {
     currentWeekFullClasses,
   };
 
+  const multiverseData = {
+    attendance,
+    subjectSummaries,
+    overallSummary,
+    streakDayData,
+    streakSubjectAbsencesByDate,
+    futureClasses,
+    bunkableDays,
+  };
+
   return (
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
@@ -793,7 +810,9 @@ function App() {
             <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
             <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
             <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+            <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
             <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+            <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
             <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
             <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
           </div>
@@ -840,7 +859,9 @@ function App() {
             </Suspense>
           } />
           <Route path="/strategy" element={<Strategy data={strategyData} handlers={strategyHandlers} />} />
+          <Route path="/multiverse" element={<MultiversePage data={multiverseData} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
+          <Route path="/history" element={<AttendanceHistory studentContext={studentContext} subjects={subjectSummaries} knownSchedule={currentWeekFullClasses} />} />
           <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode /></Suspense>} />
           <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading upload form...</div>}><Contribute /></Suspense>} />
           <Route path="/feedback" element={<Snitch />} />
@@ -889,7 +910,7 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
           Get connected
         </h2>
         <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6 }}>
-          Install the KIET extension once, then track attendance here.
+          Install the KIET extension once, then track attendance seamlessly.
         </p>
       </div>
 
@@ -898,7 +919,7 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
         className="action-button action-button--primary"
         style={{ ...primaryButtonStyle(false), padding: "14px 28px", alignSelf: "start", justifySelf: "start", fontSize: 15 }}
         onClick={() => {
-          window.open("/bunk-helper-extension.zip?v=0.1.1", "_blank");
+          window.open("/bunk-helper-extension.zip", "_blank");
         }}
       >
         Download extension
@@ -944,7 +965,7 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
             </li>
             <li>Turn on <strong>Developer Mode</strong>.</li>
             <li>Click <strong>Load unpacked</strong>.</li>
-            <li><strong>Select the folder that contains <code>manifest.json</code></strong>.</li>
+            <li><strong>Select the extracted extension folder</strong> (the one with <code>manifest.json</code>).</li>
           </ol>
         </div>
       </div>
@@ -977,10 +998,12 @@ export function ProgressBar({
   label,
   percentage,
   healthy,
+  showThreshold = false,
 }: {
   label: string;
   percentage: number;
   healthy: boolean;
+  showThreshold?: boolean;
 }) {
   return (
     <div className="progress-meter" style={{ display: "grid", gap: 8 }}>
@@ -1000,6 +1023,7 @@ export function ProgressBar({
       <div
         className="progress-track"
         style={{
+          position: "relative",
           height: 12,
           borderRadius: 999,
           background: "var(--bg-section)",
@@ -1013,6 +1037,21 @@ export function ProgressBar({
             height: "100%",
           }}
         />
+        {showThreshold && (
+          <div
+            title="75% Attendance Threshold"
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: "75%",
+              width: 2,
+              background: "var(--text-primary)",
+              opacity: 0.6,
+              zIndex: 2,
+            }}
+          />
+        )}
       </div>
     </div>
   );
