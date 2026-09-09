@@ -877,6 +877,127 @@ function App() {
           } />
         </Routes>
 
+        {/* GitHub Section / Footer */}
+        <footer
+          className="standard-card rise-in"
+          style={{
+            marginTop: 16,
+            padding: "24px 28px",
+            borderRadius: 24,
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            display: "grid",
+            gap: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>⭐</span>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  KIET Bunk Helper is Open Source
+                </h3>
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  color: "var(--text-secondary)",
+                  maxWidth: 680,
+                  lineHeight: 1.5,
+                }}
+              >
+                Built for KIETians to track attendance, plan safe bunks, calculate medical leave rescue, and simulate multiverse scenarios with 100% privacy.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <a
+                href="https://github.com/siddharthavsomvanshi/kiet-bunk-helper"
+                target="_blank"
+                rel="noreferrer"
+                className="action-button action-button--primary"
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <svg
+                  height="18"
+                  width="18"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  style={{ display: "block" }}
+                >
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                Star on GitHub
+              </a>
+
+              <a
+                href="https://github.com/siddharthavsomvanshi/kiet-bunk-helper/issues"
+                target="_blank"
+                rel="noreferrer"
+                className="action-button action-button--secondary"
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>🐛</span> Report Issue
+              </a>
+            </div>
+          </div>
+
+          <div
+            style={{
+              paddingTop: 12,
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              fontSize: 13,
+              color: "var(--text-muted)",
+            }}
+          >
+            <div>
+              Made with ❤️ for KIET Students • <a href="https://github.com/siddharthavsomvanshi/kiet-bunk-helper" target="_blank" rel="noreferrer" style={{ color: "var(--primary)", textDecoration: "none", fontWeight: 600 }}>siddharthavsomvanshi/kiet-bunk-helper</a>
+            </div>
+            <div>
+              MIT Licensed • Community Driven
+            </div>
+          </div>
+        </footer>
+
       </div>
       <Analytics />
     </main>
