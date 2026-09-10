@@ -50,6 +50,20 @@ async function setupHeaderRules() {
             urlFilter: "https://kiet.cybervidya.net/*",
           },
         },
+        {
+          id: 2,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            responseHeaders: [
+              { header: "X-Frame-Options", operation: "remove" },
+              { header: "Frame-Options", operation: "remove" },
+            ],
+          },
+          condition: {
+            resourceTypes: ["sub_frame"],
+          },
+        },
       ],
     });
   } catch (err) {
@@ -125,8 +139,10 @@ async function handleMessage(message) {
       };
 
     case "PREPARE_LOGIN":
+      await removeStorage(["authToken", "capturedAt"]);
       await setStorage({
         pendingLogin: true,
+        clearedForLogin: false,
         targetOrigin: message.payload?.targetOrigin ?? null,
       });
       return { ok: true, payload: { ok: true } };

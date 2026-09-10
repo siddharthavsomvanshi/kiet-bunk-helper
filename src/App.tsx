@@ -601,7 +601,11 @@ function App() {
       await callExtension("PREPARE_LOGIN", {
         targetOrigin: window.location.origin,
       });
-      window.location.href = "https://kiet.cybervidya.net/";
+      if (window.top && window.top !== window) {
+        window.top.location.href = "https://kiet.cybervidya.net/";
+      } else {
+        window.location.href = "https://kiet.cybervidya.net/";
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }
@@ -801,40 +805,57 @@ function App() {
     bunkableDays,
   };
 
+  const isOverlayMode = new URLSearchParams(location.search).get("mode") === "overlay";
+
   return (
-    <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
-      <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
-        
-        <nav className="app-nav rise-in flex-between">
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", flexWrap: "nowrap" }}>
-            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
-            <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
-            <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
-            <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
-            <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
-            <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
-            <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
-            <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
-          </div>
-          <button 
-            onClick={() => setTheme(prev => prev === "light" ? "amoled" : "light")}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 20,
-              padding: "0 8px",
-              color: "var(--text-primary)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}
-            title={theme === "light" ? "Switch to AMOLED Theme" : "Switch to Light Theme"}
-          >
-            {theme === "light" ? "🌙" : "☀️"}
-          </button>
-        </nav>
+    <main
+      className={`app-shell ${isOverlayMode ? "overlay-mode" : ""}`}
+      style={{
+        minHeight: "100vh",
+        padding: isOverlayMode ? "12px" : "32px 18px 48px",
+      }}
+    >
+      <div
+        className="app-wrap"
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          display: "grid",
+          gap: isOverlayMode ? 12 : 20,
+        }}
+      >
+        {!isOverlayMode && (
+          <nav className="app-nav rise-in flex-between">
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", flexWrap: "nowrap" }}>
+              <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+              <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
+              <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+              <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
+              <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+              <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
+              <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
+              <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
+            </div>
+            <button 
+              onClick={() => setTheme(prev => prev === "light" ? "amoled" : "light")}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 20,
+                padding: "0 8px",
+                color: "var(--text-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}
+              title={theme === "light" ? "Switch to AMOLED Theme" : "Switch to Light Theme"}
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+          </nav>
+        )}
 
         <Routes>
           <Route path="/" element={<Dashboard data={dashboardData} handlers={dashboardHandlers} />} />
@@ -877,19 +898,19 @@ function App() {
           } />
         </Routes>
 
-        {/* GitHub Section / Footer */}
-        <footer
-          className="standard-card rise-in"
-          style={{
-            marginTop: 16,
-            padding: "24px 28px",
-            borderRadius: 24,
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            display: "grid",
-            gap: 16,
-          }}
-        >
+        {!isOverlayMode && (
+          <footer
+            className="standard-card rise-in"
+            style={{
+              marginTop: 16,
+              padding: "24px 28px",
+              borderRadius: 24,
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              display: "grid",
+              gap: 16,
+            }}
+          >
           <div
             style={{
               display: "flex",
@@ -997,6 +1018,7 @@ function App() {
             </div>
           </div>
         </footer>
+        )}
 
       </div>
       <Analytics />
@@ -1120,27 +1142,31 @@ export function ProgressBar({
   percentage,
   healthy,
   showThreshold = false,
+  showMeta = true,
 }: {
   label: string;
   percentage: number;
   healthy: boolean;
   showThreshold?: boolean;
+  showMeta?: boolean;
 }) {
   return (
-    <div className="progress-meter" style={{ display: "grid", gap: 8 }}>
-      <div
-        className="progress-meta"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          fontSize: 12,
-          color: "var(--text-muted)",
-        }}
-      >
-        <span>{label}</span>
-        <span>{percentage.toFixed(1)}%</span>
-      </div>
+    <div className="progress-meter" style={{ display: "grid", gap: showMeta ? 8 : 0 }}>
+      {showMeta && (
+        <div
+          className="progress-meta"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            fontSize: 12,
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>{label}</span>
+          <span>{percentage.toFixed(1)}%</span>
+        </div>
+      )}
       <div
         className="progress-track"
         style={{

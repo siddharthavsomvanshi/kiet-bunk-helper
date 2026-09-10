@@ -233,6 +233,10 @@ h6,
   padding: 20px !important;
 }
 
+.subject-card-compact {
+  padding: 12px 14px !important;
+}
+
 .standard-card:hover,
 .surface-card:hover,
 .premium-panel:hover,
