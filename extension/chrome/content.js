@@ -118,13 +118,33 @@ function extractUid() {
   return null;
 }
 
+let isCapturing = false;
+
+function patchStorageSetItem() {
+  try {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      originalSetItem.apply(this, arguments);
+      if (key === "authenticationtoken" && isKietDomain()) {
+        maybeCaptureTokenAndReturn();
+      }
+    };
+  } catch (e) {
+    console.error("Failed to patch Storage.prototype.setItem", e);
+  }
+}
+
 function maybeCaptureTokenAndReturn() {
+  if (isCapturing) return;
+
   const token = localStorage.getItem("authenticationtoken");
   const uid = extractUid();
 
   if (!token) {
     return;
   }
+
+  isCapturing = true;
 
   chrome.runtime.sendMessage(
     {
@@ -136,10 +156,16 @@ function maybeCaptureTokenAndReturn() {
       },
     },
     () => {
+      isCapturing = false;
       chrome.storage.local.get(["pendingLogin", "targetOrigin"], (result) => {
         if (result.pendingLogin && result.targetOrigin) {
-          chrome.storage.local.set({ pendingLogin: false }, () => {
-            window.location.href = `${result.targetOrigin}/?session=ready`;
+          chrome.storage.local.set({ pendingLogin: false, clearedForLogin: false }, () => {
+            const target = `${result.targetOrigin}/?session=ready`;
+            if (window.top && window.top !== window) {
+              window.top.location.href = target;
+            } else {
+              window.location.href = target;
+            }
           });
         }
       });
@@ -342,6 +368,8 @@ function initialize() {
   }
 
   if (isKietDomain()) {
+    patchStorageSetItem();
+
     if (window.location.search.includes("action=logout")) {
       localStorage.clear();
       sessionStorage.clear();
@@ -360,7 +388,18 @@ function initialize() {
       return;
     }
 
-    maybeCaptureTokenAndReturn();
+    chrome.storage.local.get(["pendingLogin", "clearedForLogin"], (res) => {
+      if (res.pendingLogin && !res.clearedForLogin) {
+        localStorage.removeItem("authenticationtoken");
+        chrome.storage.local.set({ clearedForLogin: true }, () => {
+          maybeCaptureTokenAndReturn();
+        });
+      } else {
+        maybeCaptureTokenAndReturn();
+      }
+    });
+
+    setInterval(maybeCaptureTokenAndReturn, 1000);
 
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", injectKietOverlay);

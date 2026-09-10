@@ -601,7 +601,11 @@ function App() {
       await callExtension("PREPARE_LOGIN", {
         targetOrigin: window.location.origin,
       });
-      window.location.href = "https://kiet.cybervidya.net/";
+      if (window.top && window.top !== window) {
+        window.top.location.href = "https://kiet.cybervidya.net/";
+      } else {
+        window.location.href = "https://kiet.cybervidya.net/";
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }

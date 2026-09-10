@@ -139,8 +139,10 @@ async function handleMessage(message) {
       };
 
     case "PREPARE_LOGIN":
+      await removeStorage(["authToken", "capturedAt"]);
       await setStorage({
         pendingLogin: true,
+        clearedForLogin: false,
         targetOrigin: message.payload?.targetOrigin ?? null,
       });
       return { ok: true, payload: { ok: true } };
