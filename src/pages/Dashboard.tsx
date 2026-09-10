@@ -368,11 +368,11 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                       const attendanceGuidance = getSubjectAttendanceGuidance(subject);
                       return (
                       <div
-                        className={`standard-card rise-in ${borderClass}`}
+                        className={`standard-card rise-in subject-card-compact ${borderClass}`}
                         key={subject.id}
                         style={{
                           display: "grid",
-                          gap: 10,
+                          gap: 6,
                         }}
                       >
                         <div
@@ -386,7 +386,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                         >
                           <div style={{ flex: 1, minWidth: 120 }}>
                             <div style={{ fontWeight: 700 }}>{subject.title}</div>
-                            <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                            <div style={{ color: "var(--text-muted)", fontSize: 12.5 }}>
                               {subject.courseCode} - {subject.componentName}
                             </div>
                           </div>
@@ -405,39 +405,50 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                           label="Current"
                           percentage={subject.percentage}
                           healthy={subject.percentage >= 75}
+                          showMeta={false}
                         />
 
                         <div
                           style={{
                             color: attendanceGuidance.tone,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: 600,
-                            marginTop: 2,
-                            marginBottom: 4,
+                            margin: "1px 0",
                           }}
                         >
                           {attendanceGuidance.text}
                         </div>
 
-                        {subject.upcomingCount > 0 && (
-                          <div style={{ display: "grid", gap: 10 }}>
+                        <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+                          {subject.upcomingCount > 0 && (
                             <button
                               className="action-button action-button--secondary"
                               type="button"
                               onClick={() => handlers.openPlannerOverlay(subject.id)}
-                              style={secondaryButtonStyle}
+                              style={{
+                                ...secondaryButtonStyle,
+                                flex: 1,
+                                padding: "6px 10px",
+                                fontSize: 12.5,
+                                textAlign: "center",
+                                justifyContent: "center",
+                              }}
                             >
                               Plan bunks
                             </button>
-                          </div>
-                        )}
-
-                        <div style={{ display: "grid", gap: 10 }}>
+                          )}
                           <button
                             className="action-button action-button--secondary"
                             type="button"
                             onClick={() => handlers.openDatewiseOverlay(subject)}
-                            style={secondaryButtonStyle}
+                            style={{
+                              ...secondaryButtonStyle,
+                              flex: 1,
+                              padding: "6px 10px",
+                              fontSize: 12.5,
+                              textAlign: "center",
+                              justifyContent: "center",
+                            }}
                           >
                             View attendance log
                           </button>

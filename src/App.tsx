@@ -1120,27 +1120,31 @@ export function ProgressBar({
   percentage,
   healthy,
   showThreshold = false,
+  showMeta = true,
 }: {
   label: string;
   percentage: number;
   healthy: boolean;
   showThreshold?: boolean;
+  showMeta?: boolean;
 }) {
   return (
-    <div className="progress-meter" style={{ display: "grid", gap: 8 }}>
-      <div
-        className="progress-meta"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          fontSize: 12,
-          color: "var(--text-muted)",
-        }}
-      >
-        <span>{label}</span>
-        <span>{percentage.toFixed(1)}%</span>
-      </div>
+    <div className="progress-meter" style={{ display: "grid", gap: showMeta ? 8 : 0 }}>
+      {showMeta && (
+        <div
+          className="progress-meta"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            fontSize: 12,
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>{label}</span>
+          <span>{percentage.toFixed(1)}%</span>
+        </div>
+      )}
       <div
         className="progress-track"
         style={{
