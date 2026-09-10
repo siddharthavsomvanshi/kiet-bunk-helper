@@ -147,6 +147,195 @@ function maybeCaptureTokenAndReturn() {
   );
 }
 
+function injectKietOverlay() {
+  if (window.top !== window) {
+    return;
+  }
+
+  if (sessionStorage.getItem("kiet_overlay_closed") === "true") {
+    return;
+  }
+
+  if (document.getElementById("kiet-bunk-helper-overlay-root")) {
+    return;
+  }
+
+  chrome.storage.local.get(["targetOrigin"], (result) => {
+    let baseUrl = result.targetOrigin || "https://kiet-bunk-helper.vercel.app";
+    baseUrl = baseUrl.replace(/\/$/, "");
+    const iframeUrl = `${baseUrl}/?mode=overlay`;
+
+    const container = document.createElement("div");
+    container.id = "kiet-bunk-helper-overlay-root";
+    container.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 400px;
+      max-width: calc(100vw - 32px);
+      height: 560px;
+      max-height: calc(100vh - 40px);
+      z-index: 2147483647;
+      background: #0f172a;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-sizing: border-box;
+    `;
+
+    const header = document.createElement("div");
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #1e293b;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      user-select: none;
+      cursor: move;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    `;
+
+    const titleDiv = document.createElement("div");
+    titleDiv.style.cssText = "display: flex; align-items: center; gap: 6px;";
+    titleDiv.innerHTML = `<span style="color:#60a5fa;">⚡</span> <span>Bunk Helper</span>`;
+
+    const controlsDiv = document.createElement("div");
+    controlsDiv.style.cssText = "display: flex; align-items: center; gap: 8px;";
+
+    const minBtn = document.createElement("button");
+    minBtn.type = "button";
+    minBtn.title = "Minimize";
+    minBtn.innerHTML = "─";
+    minBtn.style.cssText = `
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+    `;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.title = "Close for session";
+    closeBtn.innerHTML = "✕";
+    closeBtn.style.cssText = `
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+    `;
+
+    controlsDiv.appendChild(minBtn);
+    controlsDiv.appendChild(closeBtn);
+    header.appendChild(titleDiv);
+    header.appendChild(controlsDiv);
+
+    const iframe = document.createElement("iframe");
+    iframe.src = iframeUrl;
+    iframe.style.cssText = "width: 100%; height: 100%; border: none; background: transparent; flex: 1;";
+
+    container.appendChild(header);
+    container.appendChild(iframe);
+
+    const restoreBtn = document.createElement("button");
+    restoreBtn.id = "kiet-overlay-restore-btn";
+    restoreBtn.type = "button";
+    restoreBtn.innerHTML = `<span style="color:#60a5fa;">⚡</span> <span>Bunk Helper</span>`;
+    restoreBtn.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2147483647;
+      display: none;
+      padding: 10px 16px;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+      align-items: center;
+      gap: 6px;
+    `;
+
+    minBtn.onclick = () => {
+      container.style.display = "none";
+      restoreBtn.style.display = "flex";
+    };
+
+    restoreBtn.onclick = () => {
+      restoreBtn.style.display = "none";
+      container.style.display = "flex";
+    };
+
+    closeBtn.onclick = () => {
+      sessionStorage.setItem("kiet_overlay_closed", "true");
+      container.remove();
+      restoreBtn.remove();
+    };
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+
+    header.onmousedown = (e) => {
+      if (e.target === minBtn || e.target === closeBtn) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = container.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      container.style.bottom = "auto";
+      container.style.right = "auto";
+      container.style.left = `${initialLeft}px`;
+      container.style.top = `${initialTop}px`;
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    };
+
+    function onMouseMove(e) {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      container.style.left = `${initialLeft + dx}px`;
+      container.style.top = `${initialTop + dy}px`;
+    }
+
+    function onMouseUp() {
+      isDragging = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.body.appendChild(container);
+    document.body.appendChild(restoreBtn);
+  });
+}
+
 function initialize() {
   if (isDashboardDomain()) {
     attachAppBridge();
@@ -172,6 +361,12 @@ function initialize() {
     }
 
     maybeCaptureTokenAndReturn();
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", injectKietOverlay);
+    } else {
+      injectKietOverlay();
+    }
   }
 }
 
