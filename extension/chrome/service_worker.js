@@ -50,6 +50,20 @@ async function setupHeaderRules() {
             urlFilter: "https://kiet.cybervidya.net/*",
           },
         },
+        {
+          id: 2,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            responseHeaders: [
+              { header: "X-Frame-Options", operation: "remove" },
+              { header: "Frame-Options", operation: "remove" },
+            ],
+          },
+          condition: {
+            resourceTypes: ["sub_frame"],
+          },
+        },
       ],
     });
   } catch (err) {

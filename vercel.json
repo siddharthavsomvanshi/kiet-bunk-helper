@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://kiet.cybervidya.net http://localhost:* http://127.0.0.1:* https://*.vercel.app;"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
