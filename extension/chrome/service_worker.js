@@ -50,20 +50,6 @@ async function setupHeaderRules() {
             urlFilter: "https://kiet.cybervidya.net/*",
           },
         },
-        {
-          id: 2,
-          priority: 1,
-          action: {
-            type: "modifyHeaders",
-            responseHeaders: [
-              { header: "X-Frame-Options", operation: "remove" },
-              { header: "Frame-Options", operation: "remove" },
-            ],
-          },
-          condition: {
-            resourceTypes: ["sub_frame"],
-          },
-        },
       ],
     });
   } catch (err) {
@@ -79,11 +65,37 @@ if (chrome.runtime.onInstalled) {
   });
 }
 
+function sanitizeToken(token) {
+  if (!token) return "";
+  return token
+    .trim()
+    .replace(/^"|"$/g, "")
+    .replace(/^(GlobalEducation|Bearer)\s+/i, "")
+    .trim();
+}
+
 async function fetchKietJson(pathname, options = {}) {
-  const session = await getStoredSession();
+  let session = await getStoredSession();
 
   if (!session.token) {
     throw new Error("No KIET session is saved yet. Connect through the extension first.");
+  }
+
+  const cleanToken = sanitizeToken(session.token);
+
+  if (!session.uid && !options._isInternalUidLookup && pathname !== "/student/dashboard/registered-courses") {
+    try {
+      const studentInfoRes = await fetchKietJson("/student/dashboard/registered-courses", {
+        _isInternalUidLookup: true,
+      });
+      const firstCourse = Array.isArray(studentInfoRes.data) ? studentInfoRes.data[0] : null;
+      if (firstCourse?.studentId) {
+        await setStorage({ uid: firstCourse.studentId });
+        session.uid = firstCourse.studentId;
+      }
+    } catch (e) {
+      console.warn("Failed automatic studentId resolution:", e);
+    }
   }
 
   await setupHeaderRules();
@@ -91,7 +103,7 @@ async function fetchKietJson(pathname, options = {}) {
   const uidValue = options.uidOverride ?? session.uid;
 
   const headers = {
-    Authorization: `GlobalEducation ${session.token}`,
+    Authorization: `GlobalEducation ${cleanToken}`,
     Accept: "application/json, text/plain, */*",
     ...(uidValue ? { UID: String(uidValue) } : {}),
     ...(options.includeJsonHeaders
@@ -139,7 +151,7 @@ async function handleMessage(message) {
       };
 
     case "PREPARE_LOGIN":
-      await removeStorage(["authToken", "capturedAt"]);
+      await removeStorage(["authToken", "uid", "studentId", "capturedAt"]);
       await setStorage({
         pendingLogin: true,
         clearedForLogin: false,

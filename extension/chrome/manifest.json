@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KIET Auth Bridge",
-  "version": "0.2.0",
+  "version": "0.1.4",
   "description": "Captures the KIET ERP session and proxies attendance APIs to the dashboard.",
   "permissions": ["storage", "declarativeNetRequest"],
   "declarative_net_request": {
@@ -37,8 +37,7 @@
         "https://*.vercel.app/*"
       ],
       "js": ["content.js"],
-      "run_at": "document_end",
-      "all_frames": true
+      "run_at": "document_end"
     }
   ],
   "action": {
