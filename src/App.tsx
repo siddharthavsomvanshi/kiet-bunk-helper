@@ -41,6 +41,7 @@ import { Panel, EmptyMessage } from "./components/UI";
 import {
   clearSessionUnified,
   fetchAttendanceUnified,
+  fetchDatewiseAttendanceUnified,
   fetchScheduleUnified,
   fetchStudentIdUnified,
   getSessionStatusUnified,
@@ -684,7 +685,7 @@ function App() {
     setDatewiseLoading((previous) => new Set(previous).add(subject.id));
 
     try {
-      const response = await callExtension("FETCH_DATEWISE_ATTENDANCE", {
+      const response = await fetchDatewiseAttendanceUnified({
         studentId: studentContext.studentId,
         sessionId: studentContext.sessionId,
         courseId: subject.courseId,
