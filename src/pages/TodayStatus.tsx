@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { callExtension } from "../utils/bridge";
+import { fetchScheduleUnified, fetchDatewiseAttendanceUnified } from "../services/cybervidyaApi";
 import { getWeekRange, parseKietDateTime, formatIsoDate, getPreviousWorkingDay, formatDisplayDate } from "../utils/date";
 import type { StudentContext } from "../App";
 import type { StudentDetails, ScheduleEntry, DatewiseAttendanceBucket } from "../types/kiet";
@@ -59,7 +59,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
       const weekRange = getWeekRange(targetDateObj, 0);
       let schedule = moduleScheduleCaches[weekRange.weekStartDate];
       if (!schedule) {
-         schedule = await callExtension("FETCH_SCHEDULE", weekRange);
+         schedule = await fetchScheduleUnified(weekRange);
          moduleScheduleCaches[weekRange.weekStartDate] = schedule;
       }
       
@@ -121,7 +121,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
             ));
             
             try {
-               const res = await callExtension("FETCH_DATEWISE_ATTENDANCE", {
+               const res = await fetchDatewiseAttendanceUnified({
                   studentId: studentContext.studentId,
                   sessionId: studentContext.sessionId,
                   courseId: cId,

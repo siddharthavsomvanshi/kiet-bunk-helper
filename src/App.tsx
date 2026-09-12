@@ -38,6 +38,14 @@ import { Snitch } from "./pages/Snitch";
 import { RedemptionArc } from "./components/Attendance/RedemptionArc";
 import { Analytics } from "@vercel/analytics/react";
 import { Panel, EmptyMessage } from "./components/UI";
+import {
+  clearSessionUnified,
+  fetchAttendanceUnified,
+  fetchScheduleUnified,
+  fetchStudentIdUnified,
+  getSessionStatusUnified,
+  getStoredSession,
+} from "./services/cybervidyaApi";
 
 import { MultiversePage } from "./pages/Multiverse";
 
@@ -460,7 +468,7 @@ function App() {
     setStreakLoading(true);
 
     try {
-      const sessionStatus = await callExtension("GET_SESSION_STATUS", {});
+      const sessionStatus = await getSessionStatusUnified();
       setSessionCapturedAt(sessionStatus.capturedAt);
 
       if (!sessionStatus.hasToken) {
@@ -479,12 +487,12 @@ function App() {
         setStreakResult(null);
         setStreakLoading(false);
         setLoadState("idle");
-      setIsSyncingFuture(false);
+        setIsSyncingFuture(false);
         return;
       }
 
       const now = new Date();
-      const fetchedStudentInfo = await callExtension("FETCH_STUDENT_ID", {});
+      const fetchedStudentInfo = await fetchStudentIdUnified();
       setStudentContextOverride(
         fetchedStudentInfo.studentId === null
           ? null
@@ -495,8 +503,8 @@ function App() {
       );
 
       const [attendanceData, currentWeekScheduleUnfiltered] = await Promise.all([
-        callExtension("FETCH_ATTENDANCE", {}),
-        callExtension("FETCH_SCHEDULE", getWeekRange(now, 0)),
+        fetchAttendanceUnified(),
+        fetchScheduleUnified(getWeekRange(now, 0)),
       ]);
 
       const currentWeekSchedule = currentWeekScheduleUnfiltered ?? [];
@@ -516,7 +524,7 @@ function App() {
           const futureWeekSchedules = [];
           for (let weekOffset = 1; weekOffset < FUTURE_WEEKS_TO_FETCH; weekOffset++) {
             futureWeekSchedules.push(
-              await callExtension("FETCH_SCHEDULE", getWeekRange(now, weekOffset))
+              await fetchScheduleUnified(getWeekRange(now, weekOffset))
             );
           }
           const allSchedules = [currentWeekScheduleUnfiltered, ...futureWeekSchedules];
@@ -561,60 +569,52 @@ function App() {
     }
 
     let isMounted = true;
-    let attempts = 0;
 
-    function checkAndPing() {
+    async function checkSessionAndPing() {
       if (!isMounted) return;
 
-      const marker = document.getElementById("kiet-extension-installed");
+      const directSession = getStoredSession();
+      if (directSession.hasToken) {
+        setExtensionDetected(true);
+        await syncDashboard();
+        return;
+      }
 
+      const marker = document.getElementById("kiet-extension-installed");
       if (marker) {
-        callExtension("PING", {})
-          .then(() => {
-            if (!isMounted) return;
+        try {
+          await callExtension("PING", {});
+          if (isMounted) {
             setExtensionDetected(true);
-            return syncDashboard();
-          })
-          .catch((caughtError) => {
-            if (!isMounted) return;
-            setExtensionDetected(false);
-            setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
-          });
-      } else if (attempts < 15) {
-        attempts++;
-        setTimeout(checkAndPing, 100);
-      } else {
+            await syncDashboard();
+            return;
+          }
+        } catch {
+          // Extension ping failed, fallback to login screen
+        }
+      }
+
+      if (isMounted) {
         setExtensionDetected(false);
+        setLoadState("idle");
       }
     }
 
-    checkAndPing();
+    checkSessionAndPing();
 
     return () => {
       isMounted = false;
     };
   }, [syncDashboard]);
 
-  async function handleConnectClick() {
+  function handleConnectClick() {
     setError("");
-
-    try {
-      await callExtension("PREPARE_LOGIN", {
-        targetOrigin: window.location.origin,
-      });
-      if (window.top && window.top !== window) {
-        window.top.location.href = "https://kiet.cybervidya.net/";
-      } else {
-        window.location.href = "https://kiet.cybervidya.net/";
-      }
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
-    }
+    setIsLoginModalOpen(true);
   }
 
   async function handleClearSession() {
     try {
-      await callExtension("CLEAR_SESSION", {});
+      await clearSessionUnified();
       setAttendance(null);
       setUpcomingClasses([]);
       setCurrentWeekFullClasses([]);
@@ -634,7 +634,6 @@ function App() {
       setStreakLoading(false);
       setLoadState("idle");
       setIsSyncingFuture(false);
-      window.location.href = "https://kiet.cybervidya.net/?action=logout";
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
     }
@@ -1007,7 +1006,7 @@ function App() {
   );
 }
 
-export function SetupCard({ hasData }: { hasData: boolean }) {
+export function SetupCard({ hasData, onLoginClick }: { hasData: boolean; onLoginClick?: () => void }) {
   return (
     <section
       className="premium-panel rise-in"
@@ -1034,20 +1033,32 @@ export function SetupCard({ hasData }: { hasData: boolean }) {
           Get connected
         </h2>
         <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6 }}>
-          Install the KIET extension once, then track attendance seamlessly.
+          Log in directly with your Student ID & Password, or use the Chrome extension.
         </p>
       </div>
 
-      <button
-        type="button"
-        className="action-button action-button--primary"
-        style={{ ...primaryButtonStyle(false), padding: "14px 28px", alignSelf: "start", justifySelf: "start", fontSize: 15 }}
-        onClick={() => {
-          window.open("/bunk-helper-extension.zip", "_blank");
-        }}
-      >
-        Download extension
-      </button>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {onLoginClick && (
+          <button
+            type="button"
+            className="action-button action-button--primary"
+            style={{ ...primaryButtonStyle(false), padding: "14px 28px", fontSize: 15 }}
+            onClick={onLoginClick}
+          >
+            Login to CyberVidya
+          </button>
+        )}
+        <button
+          type="button"
+          className="action-button action-button--secondary"
+          style={{ padding: "14px 24px", fontSize: 15 }}
+          onClick={() => {
+            window.open("/bunk-helper-extension.zip", "_blank");
+          }}
+        >
+          Download Extension (Optional)
+        </button>
+      </div>
 
       <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
         <div
@@ -1875,5 +1886,4 @@ function getMatchingUpcomingClasses(
     return normalizeIdentifier(entry.courseCompName) === normalizedComponentName;
   });
 }
-
 export default App;

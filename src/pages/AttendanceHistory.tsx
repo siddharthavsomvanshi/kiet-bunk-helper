@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { StudentContext, SubjectSummary } from "../App";
 import { EmptyMessage, Panel } from "../components/UI";
 import type { DatewiseAttendanceBucket, DatewiseAttendanceLecture, ScheduleEntry } from "../types/kiet";
-import { callExtension } from "../utils/bridge";
+import { fetchScheduleUnified, fetchDatewiseAttendanceUnified } from "../services/cybervidyaApi";
 import { formatIsoDate, getWeekRange, parseKietDateTime } from "../utils/date";
 
 type HistoryRow = {
@@ -125,7 +125,7 @@ export function AttendanceHistory({
     try {
       // Schedule is fetched only after a date is chosen. It determines exactly
       // which course components need attendance records for that one date.
-      const schedule = await callExtension("FETCH_SCHEDULE", getWeekRange(new Date(`${dateKey}T00:00:00`)));
+      const schedule = await fetchScheduleUnified(getWeekRange(new Date(`${dateKey}T00:00:00`)));
       const scheduledClasses = schedule.filter((entry) => sameScheduleDate(entry, dateKey));
       const subjectsById = new Map<string, SubjectSummary>();
 
@@ -137,7 +137,7 @@ export function AttendanceHistory({
       const attendanceBySubject = new Map<string, DatewiseAttendanceLecture[]>();
       await Promise.all(
         Array.from(subjectsById.values()).map(async (subject) => {
-          const buckets = await callExtension("FETCH_DATEWISE_ATTENDANCE", {
+          const buckets = await fetchDatewiseAttendanceUnified({
             studentId: studentContext.studentId,
             sessionId: studentContext.sessionId,
             courseId: subject.courseId,

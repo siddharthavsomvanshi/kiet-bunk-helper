@@ -1,4 +1,4 @@
-import { callExtension } from "./bridge";
+import { fetchDatewiseAttendanceUnified } from "../services/cybervidyaApi";
 import type { DatewiseAttendanceBucket } from "../types/kiet";
 
 export interface StreakSubjectConfig {
@@ -211,7 +211,7 @@ export async function fetchGlobalDatewiseAttendance(
 
     const results = await Promise.allSettled(
       batch.map(async (subject) => {
-        const response = await callExtension("FETCH_DATEWISE_ATTENDANCE", {
+        const response = await fetchDatewiseAttendanceUnified({
           studentId,
           sessionId,
           courseId: subject.courseId,

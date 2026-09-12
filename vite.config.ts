@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png"],
+      workbox: {
+        navigateFallbackDenylist: [/^\/api/],
+      },
       manifest: {
         name: "KIET Attendance Dashboard",
         short_name: "Attendance",
@@ -20,17 +23,25 @@ export default defineConfig({
             src: "favicon.png",
             sizes: "192x192 512x512",
             type: "image/png",
-            purpose: "any maskable"
-          }
-        ]
+            purpose: "any maskable",
+          },
+        ],
       },
       devOptions: {
-        enabled: true
-      }
-    })
+        enabled: true,
+      },
+    }),
   ],
   server: {
     host: "0.0.0.0",
-    port: 5173
-  }
+    port: 5173,
+    proxy: {
+      "/api/cybervidya": {
+        target: "https://kiet.cybervidya.net/api",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/cybervidya/, ""),
+      },
+    },
+  },
 });

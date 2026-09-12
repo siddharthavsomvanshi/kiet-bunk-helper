@@ -1,4 +1,5 @@
 import React from "react";
+import { LoginScreen } from "../components/LoginScreen";
 import {
   SetupCard,
   StatusCard,
@@ -111,104 +112,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
 
   return (
     <>
-      {(!data.extensionDetected || !data.attendance) ? (
-        <>
-          <section
-            className="standard-card rise-in border-l-primary"
-            style={{
-              display: "grid",
-              gap: 18,
-            }}
-          >
-            <span
-              className="brand-kicker status-badge status-badge--neutral"
-              style={{
-                width: "fit-content",
-                padding: "6px 12px",
-                borderRadius: 999,
-                fontSize: 13,
-                fontWeight: 700,
-              }}
-            >
-              Attendance dashboard
-            </span>
-
-            <div style={{ display: "grid", gap: 12 }}>
-              <h1
-                className="display-title"
-                style={{ margin: 0, fontSize: "clamp(2.5rem, 6vw, 4.9rem)", lineHeight: 0.95 }}
-              >
-                Attendance, simplified.
-              </h1>
-              <p
-                className="hero-copy"
-                style={{ margin: 0, maxWidth: 760, color: "var(--text-secondary)", fontSize: 18 }}
-              >
-                Everything you need to manage attendance in one place.
-              </p>
-            </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-              <button
-                className="action-button action-button--primary"
-                type="button"
-                onClick={handlers.handleConnectClick}
-                disabled={!data.extensionDetected}
-                style={primaryButtonStyle(!data.extensionDetected)}
-              >
-                Connect KIET
-              </button>
-              <button
-                className="action-button action-button--secondary"
-                type="button"
-                onClick={handlers.syncDashboard}
-                style={secondaryButtonStyle}
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <StatusCard
-                title="Connection"
-                value={data.extensionDetected ? "Ready" : "Not ready"}
-                tone={data.extensionDetected ? "var(--success)" : "var(--danger)"}
-              />
-              <StatusCard
-                title="Sync status"
-                value={
-                  data.loadState === "ready"
-                    ? "Synced"
-                    : data.loadState === "loading"
-                      ? "Refreshing"
-                      : data.loadState === "error"
-                        ? "Needs attention"
-                        : "Waiting"
-                }
-                tone={data.loadState === "error" ? "var(--danger)" : "var(--info)"}
-              />
-              <StatusCard
-                title="Last sync"
-                value={formatCapturedAt(data.sessionCapturedAt)}
-                tone="var(--text-primary)"
-              />
-              <StatusCard
-                title="Up next"
-                value={String(data.upcomingClasses.length)}
-                tone="var(--text-primary)"
-              />
-            </div>
-
-            {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
-          </section>
-          <SetupCard hasData={!!data.attendance} />
-        </>
+      {!data.attendance ? (
+        <LoginScreen onSuccess={handlers.syncDashboard} />
       ) : (
         <>
           {/* COMPACT STUDENT IDENTITY HEADER */}
