@@ -198,10 +198,10 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                 </div>
               </div>
 
-              <div style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 600 }}>
-                Current: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.percentage.toFixed(1)}%</strong>
-                {"   |   "}
-                If you attend all: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.projectedPercentage.toFixed(1)}%</strong>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", alignItems: "center", flexWrap: "wrap", fontSize: 15, color: "var(--text-secondary)", fontWeight: 600 }}>
+                <span>Current: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.percentage.toFixed(1)}%</strong></span>
+                <span style={{ opacity: 0.5 }}>|</span>
+                <span>If you attend all: <strong style={{ color: "var(--text-primary)" }}>{data.overallSummary.projectedPercentage.toFixed(1)}%</strong></span>
               </div>
 
               <div style={{ justifySelf: "center" }}>

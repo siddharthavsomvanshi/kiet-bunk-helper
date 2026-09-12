@@ -295,7 +295,7 @@ export function TodayStatus({ attendance, studentContext }: TodayStatusProps) {
 
       {totalClasses > 0 && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12 }}>
             <StatusCard title="Classes" value={String(totalClasses)} tone="var(--text-primary)" />
             <StatusCard title="Present" value={String(presentCount)} tone="var(--success)" />
             <StatusCard title="Absent" value={String(absentCount)} tone="var(--danger)" />

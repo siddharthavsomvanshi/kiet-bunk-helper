@@ -810,7 +810,7 @@ function App() {
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         <nav className="app-nav rise-in flex-between">
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", flexWrap: "nowrap" }}>
+          <div className="app-nav-links">
             <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
             <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
             <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>

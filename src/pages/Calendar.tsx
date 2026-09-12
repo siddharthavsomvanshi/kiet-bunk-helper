@@ -30,10 +30,10 @@ export function CalendarPage({ data }: { data: CalendarData }) {
         {dayLabels.length === 0 ? (
           <EmptyMessage message="No classes found for this week." />
         ) : (
-          <div style={{ overflowX: "auto", paddingBottom: 16, margin: "0 -4px", padding: "4px" }}>
+          <div className="schedule-scroll-container">
             <div style={{ display: "flex", gap: 16, minWidth: "max-content" }}>
               {dayLabels.map((dayLabel) => (
-                <div key={dayLabel} style={{ width: 280, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div key={dayLabel} className="schedule-day-column" style={{ width: 280, display: "flex", flexDirection: "column", gap: 12 }}>
                   <div style={{ 
                     fontWeight: 700, 
                     fontSize: 16, 
