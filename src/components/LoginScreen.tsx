@@ -96,24 +96,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       >
         {/* Branding Header */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div
+          <img
+            src="/favicon.png"
+            alt="kiet-bunk-helper logo"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               borderRadius: 16,
-              background: "linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%)",
-              color: "#ffffff",
-              fontSize: 22,
-              fontWeight: 800,
+              objectFit: "contain",
               marginBottom: 14,
-              boxShadow: "0 8px 20px rgba(124, 58, 237, 0.3)",
+              boxShadow: "0 8px 20px rgba(124, 58, 237, 0.25)",
             }}
-          >
-            K
-          </div>
+          />
           <h1
             style={{
               margin: "0 0 6px 0",
