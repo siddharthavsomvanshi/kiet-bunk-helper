@@ -109,6 +109,7 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
   const activeOverlayGuidance = activeOverlaySubject
     ? getSubjectAttendanceGuidance(activeOverlaySubject)
     : null;
+  const [showDatewiseDetails, setShowDatewiseDetails] = React.useState(false);
 
   return (
     <>
@@ -686,50 +687,55 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
             >
               <div
                 style={{
-                  display: "grid",
-                  gap: 18,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
                   minHeight: 0,
                   height: "100%",
-                  gridTemplateRows:
-                    activeDatewiseState &&
-                    !isActiveDatewiseLoading &&
-                    !activeDatewiseError
-                      ? "auto minmax(0, 1fr)"
-                      : undefined,
                 }}
               >
-                <div style={{ display: "grid", gap: 12 }}>
-                  <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                    See what was marked for each class.
-                  </div>
-
+                {/* COMPACT SUMMARY HEADER */}
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 8,
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    border: "1px solid var(--border)",
+                    background: "var(--bg-card-subtle)",
+                    flexShrink: 0,
+                  }}
+                >
                   <div
                     style={{
-                      display: "grid",
-                      gap: 12,
-                      padding: 14,
-                      borderRadius: 16,
-                      border: "1px solid var(--border)",
-                      background: "var(--bg-card)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
                     }}
                   >
-                    <ProgressBar
-                      label="Current"
-                      percentage={activeDatewiseSubject.percentage}
-                      healthy={activeDatewiseSubject.percentage >= 75}
-                    />
-                    <ProgressBar
-                      label={`If attended all classes this week (${activeDatewiseSubject.upcomingCount} left)`}
-                      percentage={activeDatewiseSubject.projectedPercentage}
-                      healthy={activeDatewiseSubject.projectedPercentage >= 75}
-                    />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                      {activeDatewiseState
+                        ? `${activeDatewiseState.presentCount}/${activeDatewiseState.lectureCount} Present (${activeDatewiseState.percent?.toFixed(1) ?? activeDatewiseSubject.percentage.toFixed(1)}%)`
+                        : `${activeDatewiseSubject.present}/${activeDatewiseSubject.total} Present (${activeDatewiseSubject.percentage.toFixed(1)}%)`}
+                    </div>
+
+                    <button
+                      className="action-button action-button--secondary"
+                      type="button"
+                      onClick={() => setShowDatewiseDetails((prev) => !prev)}
+                      style={{ padding: "3px 10px", fontSize: 11.5, borderRadius: 999 }}
+                    >
+                      {showDatewiseDetails ? "Hide stats" : "Show stats"}
+                    </button>
                   </div>
 
                   {activeOverlayGuidance && (
                     <div
                       style={{
                         color: activeOverlayGuidance.tone,
-                        fontSize: 14,
+                        fontSize: 12.5,
                         fontWeight: 600,
                       }}
                     >
@@ -737,57 +743,69 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                     </div>
                   )}
 
-                  {isActiveDatewiseLoading ? (
-                    <div
-                      style={{
-                        padding: 12,
-                        borderRadius: 14,
-                        background: "var(--bg-card)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      Loading attendance log...
-                    </div>
-                  ) : activeDatewiseError ? (
-                    <Notice tone="var(--danger)" background="var(--danger-soft)">
-                      {activeDatewiseError}
-                    </Notice>
-                  ) : activeDatewiseState ? (
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 14,
-                        border: "1px solid var(--border)",
-                        background: "var(--bg-card)",
-                      }}
-                    >
-                      <Metric label="Present" value={String(activeDatewiseState.presentCount)} />
-                      <Metric label="Lectures" value={String(activeDatewiseState.lectureCount)} />
-                      <Metric label="Extra" value={String(activeDatewiseState.extraAttendance)} />
-                      <Metric
-                        label="Effective"
-                        value={`${activeDatewiseState.percent?.toFixed(1) ?? "0.0"}%`}
+                  {showDatewiseDetails && (
+                    <div style={{ display: "grid", gap: 10, paddingTop: 6 }}>
+                      <ProgressBar
+                        label="Current"
+                        percentage={activeDatewiseSubject.percentage}
+                        healthy={activeDatewiseSubject.percentage >= 75}
                       />
+                      <ProgressBar
+                        label={`If attended all classes this week (${activeDatewiseSubject.upcomingCount} left)`}
+                        percentage={activeDatewiseSubject.projectedPercentage}
+                        healthy={activeDatewiseSubject.projectedPercentage >= 75}
+                      />
+                      {activeDatewiseState && (
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                            gap: 8,
+                            paddingTop: 4,
+                          }}
+                        >
+                          <Metric label="Present" value={String(activeDatewiseState.presentCount)} />
+                          <Metric label="Lectures" value={String(activeDatewiseState.lectureCount)} />
+                          <Metric label="Extra" value={String(activeDatewiseState.extraAttendance)} />
+                          <Metric
+                            label="Effective"
+                            value={`${activeDatewiseState.percent?.toFixed(1) ?? "0.0"}%`}
+                          />
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <EmptyMessage message="Open this to load the attendance log." />
                   )}
                 </div>
 
-                {activeDatewiseState && !isActiveDatewiseLoading && !activeDatewiseError && (
+                {isActiveDatewiseLoading ? (
+                  <div
+                    style={{
+                      padding: 16,
+                      borderRadius: 14,
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                      textAlign: "center",
+                    }}
+                  >
+                    Loading attendance log...
+                  </div>
+                ) : activeDatewiseError ? (
+                  <Notice tone="var(--danger)" background="var(--danger-soft)">
+                    {activeDatewiseError}
+                  </Notice>
+                ) : activeDatewiseState ? (
                   activeDatewiseState.lectures.length > 0 ? (
                     <div
                       style={{
                         display: "grid",
                         gap: 8,
+                        flex: 1,
                         minHeight: 0,
                         overflowY: "auto",
-                        paddingRight: 4,
+                        paddingRight: 2,
                         alignContent: "start",
+                        WebkitOverflowScrolling: "touch",
                       }}
                     >
                       {activeDatewiseState.lectures.map((lecture, index) => {
@@ -865,6 +883,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
                   ) : (
                     <EmptyMessage message="No lecture entries were returned for this subject." />
                   )
+                ) : (
+                  <EmptyMessage message="Open this to load the attendance log." />
                 )}
               </div>
             </OverlayDialog>
