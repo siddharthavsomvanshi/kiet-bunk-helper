@@ -807,38 +807,77 @@ function App() {
     bunkableDays,
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <main className="app-shell" style={{ minHeight: "100vh", padding: "32px 18px 48px" }}>
       <div className="app-wrap" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 20 }}>
         <nav className="app-nav rise-in flex-between">
-          <div className="app-nav-links">
-            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
-            <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
-            <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
-            <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
-            <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
-            <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
-            <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
-            <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+            <div className="app-nav-links">
+              <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+              <Link to="/today" className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>Today</Link>
+              <Link to="/strategy" className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>Planner</Link>
+              <Link to="/multiverse" className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>What If?</Link>
+              <Link to="/calendar" className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>Schedule</Link>
+              <Link to="/history" className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>Attendance History</Link>
+              <Link to="/exam" className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>Exam</Link>
+              <Link to="/feedback" className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>Report</Link>
+            </div>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <button 
+                onClick={() => setTheme(prev => prev === "light" ? "amoled" : "light")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 20,
+                  padding: "0 8px",
+                  color: "var(--text-primary)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0
+                }}
+                title={theme === "light" ? "Switch to AMOLED Theme" : "Switch to Light Theme"}
+              >
+                {theme === "light" ? "🌙" : "☀️"}
+              </button>
+              
+              <button
+                className="mobile-menu-toggle action-button action-button--secondary"
+                onClick={() => setMobileMenuOpen(prev => !prev)}
+                style={{
+                  padding: "6px 12px",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  alignItems: "center",
+                  gap: 4
+                }}
+                aria-label="Toggle navigation menu"
+              >
+                {mobileMenuOpen ? "✕ Close" : "☰ Menu"}
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={() => setTheme(prev => prev === "light" ? "amoled" : "light")}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 20,
-              padding: "0 8px",
-              color: "var(--text-primary)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}
-            title={theme === "light" ? "Switch to AMOLED Theme" : "Switch to Light Theme"}
-          >
-            {theme === "light" ? "🌙" : "☀️"}
-          </button>
+
+          {mobileMenuOpen && (
+            <div className="mobile-nav-collapsible">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>📊 Dashboard</Link>
+              <Link to="/today" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/today' ? 'active' : ''}`}>📌 Today's Status</Link>
+              <Link to="/strategy" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/strategy' ? 'active' : ''}`}>🎯 Bunk Planner</Link>
+              <Link to="/multiverse" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/multiverse' ? 'active' : ''}`}>🌀 What If? (Multiverse)</Link>
+              <Link to="/calendar" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/calendar' ? 'active' : ''}`}>📅 Class Schedule</Link>
+              <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}>📜 Attendance History</Link>
+              <Link to="/exam" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/exam' ? 'active' : ''}`}>📚 Exam Resources</Link>
+              <Link to="/feedback" onClick={() => setMobileMenuOpen(false)} className={`nav-link ${location.pathname === '/feedback' ? 'active' : ''}`}>💬 Feedback & Report</Link>
+            </div>
+          )}
         </nav>
 
         <Routes>
