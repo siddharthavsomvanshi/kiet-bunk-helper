@@ -42,7 +42,7 @@ export async function encryptAES128CBC(text: string): Promise<string> {
 
   const cryptoKey = await window.crypto.subtle.importKey(
     "raw",
-    keyBytes,
+    keyBytes.buffer as ArrayBuffer,
     { name: "AES-CBC" },
     false,
     ["encrypt"]
@@ -52,7 +52,7 @@ export async function encryptAES128CBC(text: string): Promise<string> {
   const plainTextBytes = encoder.encode(text);
 
   const encryptedBuffer = await window.crypto.subtle.encrypt(
-    { name: "AES-CBC", iv: ivBytes },
+    { name: "AES-CBC", iv: ivBytes.buffer as ArrayBuffer },
     cryptoKey,
     plainTextBytes
   );

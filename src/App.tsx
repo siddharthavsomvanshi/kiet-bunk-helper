@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DatewiseAttendanceBucket,
   DatewiseAttendanceLecture,
@@ -47,6 +47,7 @@ import {
   getSessionStatusUnified,
   getStoredSession,
 } from "./services/cybervidyaApi";
+import { sendSnapshotAsync } from "./services/notificationService";
 
 import { FooterCollaborators } from "./components/FooterCollaborators";
 import { MultiversePage } from "./pages/Multiverse";
@@ -56,69 +57,56 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default:
 const ExamMode = lazy(() => import('./pages/ExamMode').then(m => ({ default: m.ExamMode })));
 const Contribute = lazy(() => import('./pages/Contribute').then(m => ({ default: m.Contribute })));
 
+import type {
+  SubjectSummary,
+  OverallSummary,
+  RecoveryStatus,
+  RecoveryInsight,
+  WholeDayPlanSummary,
+} from "./utils/attendanceCalculations";
+
+import {
+  calculateAttendancePercentage,
+  calculateSafeBunks,
+  calculateClassesNeeded,
+  calculateProjectedAttendance,
+  calculateBunkAdjustedAttendance,
+  calculateOverallSummary,
+  getScheduleEntryKey,
+  getScheduleDateKey,
+  formatDateKeyLabel,
+  getDayDifference,
+  compareScheduleEntriesByStart,
+  getMatchingUpcomingClasses,
+  buildWholeDayPlan,
+  normalizeIdentifier,
+} from "./utils/attendanceCalculations";
+
+export type {
+  SubjectSummary,
+  OverallSummary,
+  RecoveryStatus,
+  RecoveryInsight,
+  WholeDayPlanSummary,
+};
+
+export {
+  calculateAttendancePercentage,
+  calculateSafeBunks,
+  calculateClassesNeeded,
+  calculateProjectedAttendance,
+  calculateBunkAdjustedAttendance,
+  calculateOverallSummary,
+  getScheduleEntryKey,
+  getScheduleDateKey,
+  formatDateKeyLabel,
+  getDayDifference,
+  getMatchingUpcomingClasses,
+  buildWholeDayPlan,
+};
+
 export type LoadState = "idle" | "loading" | "ready" | "error";
 const FUTURE_WEEKS_TO_FETCH = 12;
-
-export type SubjectSummary = {
-  id: string;
-  title: string;
-  courseCode: string;
-  courseId: number;
-  componentName: string;
-  courseComponentId: number;
-  componentCount: number;
-  present: number;
-  extraAttendance: number;
-  total: number;
-  percentage: number;
-  safeBunks: number;
-  classesNeeded: number;
-  matchingUpcomingClasses: ScheduleEntry[];
-  upcomingCount: number;
-  plannedBunkCount: number;
-  projectedPresent: number;
-  projectedTotal: number;
-  projectedPercentage: number;
-  bunkAdjustedPresent: number;
-  bunkAdjustedTotal: number;
-  bunkAdjustedPercentage: number;
-  bunkImpact: number;
-};
-
-export type OverallSummary = {
-  present: number;
-  total: number;
-  upcomingCount: number;
-  plannedBunkCount: number;
-  projectedPresent: number;
-  projectedTotal: number;
-  percentage: number;
-  projectedPercentage: number;
-};
-
-export type RecoveryStatus = "no_selection" | "safe" | "recoverable" | "not_recovered";
-
-export type RecoveryInsight = {
-  status: RecoveryStatus;
-  recoveryDateKey: string | null;
-  recoveryDateLabel: string | null;
-  recoveryClasses: number | null;
-  recoveryDays: number | null;
-};
-
-export type WholeDayPlanSummary = {
-  id: string;
-  title: string;
-  courseCode: string;
-  componentName: string;
-  currentPercentage: number;
-  selectedClassCount: number;
-  attendedClassCount: number;
-  afterSelectedPresent: number;
-  afterSelectedTotal: number;
-  afterSelectedPercentage: number;
-  recovery: RecoveryInsight;
-};
 
 export type BunkableDay = {
   dateKey: string;
@@ -148,10 +136,12 @@ export type SubjectOverlayState =
 
 function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [extensionDetected, setExtensionDetected] = useState(false);
   const [isSyncingFuture, setIsSyncingFuture] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [sessionCapturedAt, setSessionCapturedAt] = useState<number | null>(null);
+  const lastSnapshotDedupeKeyRef = useRef<string | null>(null);
   const [attendance, setAttendance] = useState<StudentDetails | null>(null);
   const [studentContextOverride, setStudentContextOverride] = useState<StudentContext | null>(null);
   const [upcomingClasses, setUpcomingClasses] = useState<ScheduleEntry[]>([]);
@@ -212,31 +202,27 @@ function App() {
         const present = component.numberOfPresent + component.numberOfExtraAttendance;
         const extraAttendance = component.numberOfExtraAttendance;
         const total = component.numberOfPeriods;
-        const percentage =
-          typeof component.presentPercentage === "number"
-            ? component.presentPercentage
-            : total > 0
-              ? (present / total) * 100
-              : 0;
-        const projectedPresent = present + upcomingCount;
-        const projectedTotal = total + upcomingCount;
-        const projectedPercentage =
-          upcomingCount === 0
-            ? percentage
-            : projectedTotal > 0
-              ? (projectedPresent / projectedTotal) * 100
-              : 0;
-        const bunkAdjustedPresent = present;
-        const bunkAdjustedTotal = total + plannedBunkCount;
-        const bunkAdjustedPercentage =
-          plannedBunkCount === 0
-            ? percentage
-            : bunkAdjustedTotal > 0
-              ? (bunkAdjustedPresent / bunkAdjustedTotal) * 100
-              : 0;
-        const safeBunks = total > 0 ? Math.max(0, Math.floor(present / 0.75 - total)) : 0;
-        const classesNeeded =
-          percentage >= 75 ? 0 : Math.max(0, Math.ceil((0.75 * total - present) / 0.25));
+
+        const percentage = calculateAttendancePercentage(
+          present,
+          total,
+          component.presentPercentage
+        );
+        const { projectedPresent, projectedTotal, projectedPercentage } =
+          calculateProjectedAttendance(present, total, upcomingCount, percentage);
+        const {
+          bunkAdjustedPresent,
+          bunkAdjustedTotal,
+          bunkAdjustedPercentage,
+          bunkImpact,
+        } = calculateBunkAdjustedAttendance(
+          present,
+          total,
+          plannedBunkCount,
+          percentage
+        );
+        const safeBunks = calculateSafeBunks(present, total);
+        const classesNeeded = calculateClassesNeeded(present, total, percentage);
 
         return {
           id: `${course.courseCode}-${component.courseComponentId}`,
@@ -261,43 +247,14 @@ function App() {
           bunkAdjustedPresent,
           bunkAdjustedTotal,
           bunkAdjustedPercentage,
-          bunkImpact: bunkAdjustedPercentage - percentage,
+          bunkImpact,
         };
       }),
     );
   }, [attendance, upcomingClasses, plannedBunks]);
 
   const overallSummary = useMemo(() => {
-    if (subjectSummaries.length === 0) {
-      return null;
-    }
-
-    const present = subjectSummaries.reduce((sum, subject) => sum + subject.present, 0);
-    const total = subjectSummaries.reduce((sum, subject) => sum + subject.total, 0);
-    const upcomingCount = subjectSummaries.reduce((sum, subject) => sum + subject.upcomingCount, 0);
-    const plannedBunkCount = subjectSummaries.reduce(
-      (sum, subject) => sum + subject.plannedBunkCount,
-      0,
-    );
-    const projectedPresent = subjectSummaries.reduce(
-      (sum, subject) => sum + subject.projectedPresent,
-      0,
-    );
-    const projectedTotal = subjectSummaries.reduce(
-      (sum, subject) => sum + subject.projectedTotal,
-      0,
-    );
-
-    return {
-      present,
-      total,
-      upcomingCount,
-      plannedBunkCount,
-      projectedPresent,
-      projectedTotal,
-      percentage: total > 0 ? (present / total) * 100 : 0,
-      projectedPercentage: projectedTotal > 0 ? (projectedPresent / projectedTotal) * 100 : 0,
-    };
+    return calculateOverallSummary(subjectSummaries);
   }, [subjectSummaries]);
 
   const bunkableDays = useMemo<BunkableDay[]>(() => {
@@ -518,6 +475,17 @@ function App() {
       setCurrentWeekFullClasses(fullWeekClasses);
       setFutureClasses(currentWeekClasses); // Base initial future classes
       setLoadState("ready");
+
+      // Non-blocking fire-and-forget Unified Snapshot save for notification subsystem
+      if (attendanceData && fullWeekClasses.length > 0) {
+        const dedupeKey = `${attendanceData.studentId || "std"}-${sessionStatus.capturedAt || Date.now()}`;
+        if (lastSnapshotDedupeKeyRef.current !== dedupeKey) {
+          lastSnapshotDedupeKeyRef.current = dedupeKey;
+          void sendSnapshotAsync(attendanceData, fullWeekClasses).catch((snapshotErr) => {
+            console.warn("Non-blocking notification snapshot skipped:", snapshotErr);
+          });
+        }
+      }
 
       // Progressive Loading: Fetch remaining 11 weeks in background
       setIsSyncingFuture(true);
@@ -1568,10 +1536,6 @@ export function AttendanceSniper({ data, schedule }: { data: OverallSummary | nu
   );
 }
 
-function normalizeIdentifier(value: string | null | undefined): string {
-  return (value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-}
-
 function incrementCount(counter: Map<string, number>, key: string) {
   counter.set(key, (counter.get(key) ?? 0) + 1);
 }
@@ -1742,192 +1706,4 @@ export function getAttendanceStatusTheme(status: string | null): { background: s
   }
 }
 
-export function getScheduleEntryKey(entry: ScheduleEntry): string {
-  return [
-    normalizeIdentifier(entry.courseCode),
-    normalizeIdentifier(entry.courseCompName),
-    entry.start,
-    entry.end,
-  ].join(":");
-}
-
-function getScheduleDateKey(entry: ScheduleEntry): string {
-  const date = parseKietDateTime(entry.start);
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function formatDateKeyLabel(dateKey: string): string {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(year, month - 1, day));
-}
-
-function getDayDifference(startDateKey: string, endDateKey: string): number {
-  const [startYear, startMonth, startDay] = startDateKey.split("-").map(Number);
-  const [endYear, endMonth, endDay] = endDateKey.split("-").map(Number);
-  const start = new Date(startYear, startMonth - 1, startDay);
-  const end = new Date(endYear, endMonth - 1, endDay);
-  return Math.round((end.getTime() - start.getTime()) / 86_400_000);
-}
-
-function compareScheduleEntriesByStart(left: ScheduleEntry, right: ScheduleEntry): number {
-  return parseKietDateTime(left.start).getTime() - parseKietDateTime(right.start).getTime();
-}
-
-function buildWholeDayPlan(
-  present: number,
-  total: number,
-  relevantClasses: ScheduleEntry[],
-  selectedDateKeys: Set<string>,
-): {
-  selectedClassCount: number;
-  attendedClassCount: number;
-  afterSelectedPresent: number;
-  afterSelectedTotal: number;
-  afterSelectedPercentage: number;
-  recovery: RecoveryInsight;
-} {
-  const sortedClasses = [...relevantClasses].sort(compareScheduleEntriesByStart);
-  const sortedSelectedDates = Array.from(selectedDateKeys).sort();
-  const cutoffDateKey =
-    sortedSelectedDates.length > 0 ? sortedSelectedDates[sortedSelectedDates.length - 1] : null;
-
-  if (!cutoffDateKey) {
-    return {
-      selectedClassCount: 0,
-      attendedClassCount: 0,
-      afterSelectedPresent: present,
-      afterSelectedTotal: total,
-      afterSelectedPercentage: total > 0 ? (present / total) * 100 : 0,
-      recovery: {
-        status: "no_selection",
-        recoveryDateKey: null,
-        recoveryDateLabel: null,
-        recoveryClasses: null,
-        recoveryDays: null,
-      },
-    };
-  }
-
-  let runningPresent = present;
-  let runningTotal = total;
-  let selectedClassCount = 0;
-  let attendedClassCount = 0;
-
-  for (const entry of sortedClasses) {
-    const dateKey = getScheduleDateKey(entry);
-
-    if (dateKey > cutoffDateKey) {
-      break;
-    }
-
-    runningTotal += 1;
-
-    if (selectedDateKeys.has(dateKey)) {
-      selectedClassCount += 1;
-    } else {
-      runningPresent += 1;
-      attendedClassCount += 1;
-    }
-  }
-
-  const afterSelectedPercentage = runningTotal > 0 ? (runningPresent / runningTotal) * 100 : 0;
-
-  if (afterSelectedPercentage >= 75) {
-    return {
-      selectedClassCount,
-      attendedClassCount,
-      afterSelectedPresent: runningPresent,
-      afterSelectedTotal: runningTotal,
-      afterSelectedPercentage,
-      recovery: {
-        status: "safe",
-        recoveryDateKey: null,
-        recoveryDateLabel: null,
-        recoveryClasses: 0,
-        recoveryDays: 0,
-      },
-    };
-  }
-
-  let recoveryPresent = runningPresent;
-  let recoveryTotal = runningTotal;
-  let recoveryClasses = 0;
-
-  for (const entry of sortedClasses) {
-    const dateKey = getScheduleDateKey(entry);
-
-    if (dateKey <= cutoffDateKey) {
-      continue;
-    }
-
-    recoveryPresent += 1;
-    recoveryTotal += 1;
-    recoveryClasses += 1;
-
-    if ((recoveryPresent / recoveryTotal) * 100 >= 75) {
-      return {
-        selectedClassCount,
-        attendedClassCount,
-        afterSelectedPresent: runningPresent,
-        afterSelectedTotal: runningTotal,
-        afterSelectedPercentage,
-        recovery: {
-          status: "recoverable",
-          recoveryDateKey: dateKey,
-          recoveryDateLabel: formatDateKeyLabel(dateKey),
-          recoveryClasses,
-          recoveryDays: getDayDifference(cutoffDateKey, dateKey),
-        },
-      };
-    }
-  }
-
-  return {
-    selectedClassCount,
-    attendedClassCount,
-    afterSelectedPresent: runningPresent,
-    afterSelectedTotal: runningTotal,
-    afterSelectedPercentage,
-    recovery: {
-      status: "not_recovered",
-      recoveryDateKey: null,
-      recoveryDateLabel: null,
-      recoveryClasses: null,
-      recoveryDays: null,
-    },
-  };
-}
-
-function getMatchingUpcomingClasses(
-  courseCode: string,
-  componentName: string,
-  componentCount: number,
-  upcomingClasses: ScheduleEntry[],
-): ScheduleEntry[] {
-  const normalizedCourseCode = normalizeIdentifier(courseCode);
-  const normalizedComponentName = normalizeIdentifier(componentName);
-
-  return upcomingClasses.filter((entry) => {
-    const entryCourseCode = normalizeIdentifier(entry.courseCode);
-
-    if (entryCourseCode !== normalizedCourseCode) {
-      return false;
-    }
-
-    if (componentCount <= 1) {
-      return true;
-    }
-
-    return normalizeIdentifier(entry.courseCompName) === normalizedComponentName;
-  });
-}
 export default App;

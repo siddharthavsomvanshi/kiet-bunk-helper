@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: ["favicon.png"],
-      workbox: {
-        navigateFallbackDenylist: [/^\/api/],
-      },
       manifest: {
         name: "KIET Attendance Dashboard",
         short_name: "Attendance",

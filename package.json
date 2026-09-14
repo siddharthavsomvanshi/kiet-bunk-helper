@@ -11,10 +11,12 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "^2.104.0",
+    "@types/web-push": "^3.6.4",
     "@vercel/analytics": "^2.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.14.1"
+    "react-router-dom": "^7.14.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/react": "^18.3.11",

@@ -1,5 +1,6 @@
 import React from "react";
 import { LoginScreen } from "../components/LoginScreen";
+import { NotificationBanner } from "../components/NotificationBanner";
 import {
   SetupCard,
   StatusCard,
@@ -159,6 +160,8 @@ export function Dashboard({ data, handlers }: { data: DashboardData; handlers: D
           </section>
 
           {data.error && <Notice tone="var(--danger)" background="var(--danger-soft)">{data.error}</Notice>}
+
+          <NotificationBanner studentName={data.attendance?.fullName} />
 
           {/* PROMINENT OVERALL ATTENDANCE CARD */}
           {data.overallSummary && (
