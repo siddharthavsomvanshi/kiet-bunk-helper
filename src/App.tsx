@@ -48,6 +48,7 @@ import {
   getStoredSession,
 } from "./services/cybervidyaApi";
 
+import { FooterCollaborators } from "./components/FooterCollaborators";
 import { MultiversePage } from "./pages/Multiverse";
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
@@ -979,7 +980,10 @@ function App() {
             </div>
           </div>
 
+          <FooterCollaborators />
+
           <div
+
             style={{
               paddingTop: 12,
               borderTop: "1px solid var(--border)",
