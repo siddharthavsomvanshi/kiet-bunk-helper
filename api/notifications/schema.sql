@@ -54,11 +54,15 @@ EXECUTE FUNCTION notification_update_timestamp();
 CREATE TABLE IF NOT EXISTS daily_attendance_snapshots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_hash TEXT NOT NULL,
+    student_name TEXT, -- Student full name
     captured_at TIMESTAMPTZ NOT NULL, -- Client-side timestamp when attendance was checked
     attendance_data JSONB NOT NULL, -- Array of course components with present/total counts
     schedule_data JSONB NOT NULL, -- Weekly class timetable
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration for existing database instances:
+-- ALTER TABLE daily_attendance_snapshots ADD COLUMN IF NOT EXISTS student_name TEXT;
 
 -- Composite index for fast retrieval of the latest snapshot for a user
 CREATE INDEX IF NOT EXISTS idx_snapshots_user_captured ON daily_attendance_snapshots(user_hash, captured_at DESC);

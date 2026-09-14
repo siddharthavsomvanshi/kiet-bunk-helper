@@ -113,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from("daily_attendance_snapshots")
       .insert({
         user_hash: userHash,
+        student_name: studentName || null,
         captured_at: snapshotDate,
         attendance_data: attendance,
         schedule_data: schedule,
