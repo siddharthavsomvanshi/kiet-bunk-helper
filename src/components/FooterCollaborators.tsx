@@ -19,25 +19,25 @@ export const FOUNDERS: Contributor[] = [
   },
 ];
 
-export const STATIC_COLLABORATORS: Contributor[] = [
+export const STATIC_CO_FOUNDERS: Contributor[] = [
   {
     login: "tarun1899",
     name: "tarun1899",
     avatar_url: "https://github.com/tarun1899.png",
     html_url: "https://github.com/tarun1899",
-    role: "Collaborator",
+    role: "Co-Founder",
   },
   {
     login: "chetan78999",
     name: "yaman",
     avatar_url: "https://github.com/chetan78999.png",
     html_url: "https://github.com/chetan78999",
-    role: "Collaborator",
+    role: "Co-Founder",
   },
 ];
 
 export function FooterCollaborators() {
-  const [collaborators, setCollaborators] = useState<Contributor[]>(STATIC_COLLABORATORS);
+  const [coFounders, setCoFounders] = useState<Contributor[]>(STATIC_CO_FOUNDERS);
 
   useEffect(() => {
     let isMounted = true;
@@ -49,27 +49,34 @@ export function FooterCollaborators() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && isMounted) {
-            const apiList: Contributor[] = data.map((item: any) => ({
-              login: item.login,
-              avatar_url: item.avatar_url,
-              html_url: item.html_url,
-              contributions: item.contributions,
-            }));
+            const apiList: Contributor[] = data
+              .filter(
+                (item: any) =>
+                  item.login &&
+                  !item.login.toLowerCase().includes("vercel") &&
+                  !item.login.toLowerCase().includes("[bot]")
+              )
+              .map((item: any) => ({
+                login: item.login,
+                avatar_url: item.avatar_url,
+                html_url: item.html_url,
+                contributions: item.contributions,
+                role: "Co-Founder",
+              }));
 
             // Merge static list with API list to ensure no duplicates
             const combinedMap = new Map<string, Contributor>();
-            [...STATIC_COLLABORATORS, ...apiList].forEach((c) => {
+            [...STATIC_CO_FOUNDERS, ...apiList].forEach((c) => {
               const key = c.login.toLowerCase();
               if (!combinedMap.has(key)) {
                 combinedMap.set(key, c);
               } else {
-                // Merge extra details like contributions if present
                 const existing = combinedMap.get(key)!;
                 combinedMap.set(key, { ...existing, ...c });
               }
             });
 
-            setCollaborators(Array.from(combinedMap.values()));
+            setCoFounders(Array.from(combinedMap.values()));
           }
         }
       } catch (err) {
@@ -83,9 +90,12 @@ export function FooterCollaborators() {
     };
   }, []);
 
-  // Filter out founders from collaborators display list to avoid duplicate chips
-  const nonFounderCollaborators = collaborators.filter(
-    (c) => !FOUNDERS.some((f) => f.login.toLowerCase() === c.login.toLowerCase())
+  // Filter out main founder and vercel/bot accounts from co-founders list
+  const nonMainFounders = coFounders.filter(
+    (c) =>
+      !FOUNDERS.some((f) => f.login.toLowerCase() === c.login.toLowerCase()) &&
+      !c.login.toLowerCase().includes("vercel") &&
+      !c.login.toLowerCase().includes("[bot]")
   );
 
   return (
@@ -107,7 +117,7 @@ export function FooterCollaborators() {
           gap: 14,
         }}
       >
-        {/* Founders */}
+        {/* Main Founder */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span
             style={{
@@ -170,7 +180,7 @@ export function FooterCollaborators() {
           ))}
         </div>
 
-        {/* Collaborators */}
+        {/* Co-Founders */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span
             style={{
@@ -181,11 +191,11 @@ export function FooterCollaborators() {
               color: "var(--text-muted)",
             }}
           >
-            Collaborators:
+            Co-Founders:
           </span>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            {nonFounderCollaborators.map((c) => (
+            {nonMainFounders.map((c) => (
               <a
                 key={c.login}
                 href={c.html_url}
@@ -205,9 +215,7 @@ export function FooterCollaborators() {
                   fontWeight: 500,
                   transition: "all 0.15s ease",
                 }}
-                title={`@${c.login}${c.name ? ` (${c.name})` : ""}${
-                  c.contributions ? ` • ${c.contributions} contributions` : ""
-                }`}
+                title={`@${c.login}${c.name ? ` (${c.name})` : ""} • Co-Founder`}
               >
                 <img
                   src={c.avatar_url}
