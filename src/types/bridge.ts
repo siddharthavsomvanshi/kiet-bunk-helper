@@ -1,5 +1,15 @@
 import type { DatewiseAttendanceBucket, ScheduleEntry, StudentDetails } from "./kiet";
 
+export interface ExamSession {
+  sessionId: number;
+  sessionName: string;
+}
+
+export interface HallTicketOption {
+  id: number;
+  title: string;
+}
+
 export type BridgeRequestType =
   | "PING"
   | "PREPARE_LOGIN"
@@ -8,6 +18,9 @@ export type BridgeRequestType =
   | "FETCH_STUDENT_ID"
   | "FETCH_SCHEDULE"
   | "FETCH_DATEWISE_ATTENDANCE"
+  | "FETCH_EXAM_SESSIONS"
+  | "FETCH_HALL_TICKET_OPTIONS"
+  | "DOWNLOAD_HALL_TICKET_PDF"
   | "CLEAR_SESSION";
 
 export interface BridgeRequestPayloadMap {
@@ -23,6 +36,9 @@ export interface BridgeRequestPayloadMap {
     courseId: number;
     courseCompId: number;
   };
+  FETCH_EXAM_SESSIONS: { studentId: number | string };
+  FETCH_HALL_TICKET_OPTIONS: { sessionId: number | string };
+  DOWNLOAD_HALL_TICKET_PDF: { hallTicketId: number | string };
   CLEAR_SESSION: Record<string, never>;
 }
 
@@ -40,6 +56,9 @@ export interface BridgeResponsePayloadMap {
   FETCH_STUDENT_ID: { studentId: number | string | null; sessionId: number | string | null };
   FETCH_SCHEDULE: ScheduleEntry[];
   FETCH_DATEWISE_ATTENDANCE: DatewiseAttendanceBucket[];
+  FETCH_EXAM_SESSIONS: ExamSession[];
+  FETCH_HALL_TICKET_OPTIONS: HallTicketOption[];
+  DOWNLOAD_HALL_TICKET_PDF: { base64Pdf: string };
   CLEAR_SESSION: { ok: true };
 }
 

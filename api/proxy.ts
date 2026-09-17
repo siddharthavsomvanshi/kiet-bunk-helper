@@ -82,15 +82,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const response = await fetch(targetUrl, fetchOptions);
     const contentType = response.headers.get("content-type") || "";
+    const contentDisposition = response.headers.get("content-disposition");
 
     res.status(response.status);
+
+    if (contentType) {
+      res.setHeader("Content-Type", contentType);
+    }
+    if (contentDisposition) {
+      res.setHeader("Content-Disposition", contentDisposition);
+    }
 
     if (contentType.includes("application/json")) {
       const data = await response.json();
       res.json(data);
     } else {
-      const text = await response.text();
-      res.send(text);
+      const arrayBuffer = await response.arrayBuffer();
+      res.send(Buffer.from(arrayBuffer));
     }
   } catch (error) {
     console.error("Vercel Proxy error:", error);

@@ -264,6 +264,26 @@ async function handleMessage(message) {
       };
     }
 
+    case "FETCH_EXAM_SESSIONS": {
+      const studentId = message.payload?.studentId;
+      if (!studentId) throw new Error("FETCH_EXAM_SESSIONS requires studentId");
+      const response = await fetchKietJson(`/exam/form/session/config/getById/student/${studentId}`);
+      return {
+        ok: true,
+        payload: response.data || [],
+      };
+    }
+
+    case "FETCH_HALL_TICKET_OPTIONS": {
+      const sessionId = message.payload?.sessionId;
+      if (!sessionId) throw new Error("FETCH_HALL_TICKET_OPTIONS requires sessionId");
+      const response = await fetchKietJson(`/exam/hall-ticket/student/download/options/${sessionId}`);
+      return {
+        ok: true,
+        payload: response.data || [],
+      };
+    }
+
     case "CLEAR_SESSION":
       await removeStorage(["authToken", "uid", "studentId", "capturedAt", "pendingLogin", "sourceUrl"]);
       return { ok: true, payload: { ok: true } };

@@ -3,6 +3,7 @@ import type {
   ScheduleEntry,
   StudentDetails,
 } from "../types/kiet";
+import type { ExamSession, HallTicketOption } from "../types/bridge";
 import { callExtension } from "../utils/bridge";
 
 const AES_KEY_BASE64 = "NPdLWA5w7yFQhPeUuKmO/A==";
@@ -325,6 +326,46 @@ export async function fetchDatewiseAttendanceDirect(
   return res.data;
 }
 
+export async function fetchExamSessionsDirect(studentId: number | string): Promise<ExamSession[]> {
+  const res = await requestApi<{ data: ExamSession[] }>(
+    `/exam/form/session/config/getById/student/${studentId}`
+  );
+  return res.data || [];
+}
+
+export async function fetchHallTicketOptionsDirect(sessionId: number | string): Promise<HallTicketOption[]> {
+  const res = await requestApi<{ data: HallTicketOption[] }>(
+    `/exam/hall-ticket/student/download/options/${sessionId}`
+  );
+  return res.data || [];
+}
+
+export async function downloadHallTicketPdfDirect(hallTicketId: number | string): Promise<Blob> {
+  const session = getStoredSession();
+  const headers: Record<string, string> = {
+    Accept: "application/pdf, application/octet-stream, */*",
+  };
+
+  if (session.token) {
+    headers["Authorization"] = session.token;
+  }
+  if (session.studentId) {
+    headers["UID"] = String(session.studentId);
+  }
+
+  const response = await fetch(`${API_BASE}/report/pdf/exam/student/hall-ticket/download/${hallTicketId}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download Hall Ticket PDF (HTTP ${response.status})`);
+  }
+
+  const blob = await response.blob();
+  return new Blob([blob], { type: "application/pdf" });
+}
+
 /* Unified Handlers (Check Direct API first, Fallback to Extension if needed) */
 
 export async function getSessionStatusUnified(): Promise<{ hasToken: boolean; capturedAt: number | null }> {
@@ -382,6 +423,26 @@ export async function fetchDatewiseAttendanceUnified(params: {
     return fetchDatewiseAttendanceDirect(params.studentId, params.sessionId, params.courseId, params.courseCompId);
   }
   return callExtension("FETCH_DATEWISE_ATTENDANCE", params);
+}
+
+export async function fetchExamSessionsUnified(studentId: number | string): Promise<ExamSession[]> {
+  const session = getStoredSession();
+  if (session.hasToken) {
+    return fetchExamSessionsDirect(studentId);
+  }
+  return callExtension("FETCH_EXAM_SESSIONS", { studentId });
+}
+
+export async function fetchHallTicketOptionsUnified(sessionId: number | string): Promise<HallTicketOption[]> {
+  const session = getStoredSession();
+  if (session.hasToken) {
+    return fetchHallTicketOptionsDirect(sessionId);
+  }
+  return callExtension("FETCH_HALL_TICKET_OPTIONS", { sessionId });
+}
+
+export async function downloadHallTicketPdfUnified(hallTicketId: number | string): Promise<Blob> {
+  return downloadHallTicketPdfDirect(hallTicketId);
 }
 
 export async function clearSessionUnified() {
