@@ -874,7 +874,7 @@ function App() {
           <Route path="/multiverse" element={<MultiversePage data={multiverseData} />} />
           <Route path="/calendar" element={<CalendarPage data={calendarData} />} />
           <Route path="/history" element={<AttendanceHistory studentContext={studentContext} subjects={subjectSummaries} knownSchedule={currentWeekFullClasses} />} />
-          <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode /></Suspense>} />
+          <Route path="/exam" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading exam resources...</div>}><ExamMode attendance={attendance} subjects={subjectSummaries} overallSummary={overallSummary} /></Suspense>} />
           <Route path="/contribute" element={<Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Loading upload form...</div>}><Contribute /></Suspense>} />
           <Route path="/feedback" element={<Snitch />} />
           <Route path="/admin-login" element={

@@ -238,57 +238,94 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           continue;
         }
 
+        // Sort today's classes chronologically by start time so Lec 1, Lec 2, Lec 3 map to class order
+        todayClasses.sort(
+          (a, b) => parseKietDateTime(a.start).getTime() - parseKietDateTime(b.start).getTime()
+        );
+
         // 8. Attendance Recommendation Calculation
         const courses = (snapshot.attendance_data || []) as SnapshotCourseComponent[];
-        
-        // Group today's classes by subject component
-        const subjectClassCount = new Map<string, number>();
-        for (const entry of todayClasses) {
-          const key = [
-            normalizeIdentifier(entry.courseCode),
-            normalizeIdentifier(entry.courseCompName),
-          ].join(":");
-          subjectClassCount.set(key, (subjectClassCount.get(key) || 0) + 1);
+
+        interface ComponentState {
+          courseCode: string;
+          courseName: string;
+          componentName: string;
+          present: number;
+          total: number;
+          percentage: number;
+          safeBunks: number;
         }
 
-        const lines: string[] = [];
-        let totalSafeBunksToday = 0;
-        let mustAttendAny = false;
+        const componentExactMap = new Map<string, ComponentState>();
+        const componentCodeMap = new Map<string, ComponentState>();
+        const componentNameMap = new Map<string, ComponentState>();
 
         for (const course of courses) {
-          const key = [
+          const safeBunks = calculateSafeBunks(course.present, course.total);
+          const state: ComponentState = {
+            courseCode: course.courseCode,
+            courseName: course.courseName || course.courseCode || "Class",
+            componentName: course.componentName || "",
+            present: course.present,
+            total: course.total,
+            percentage: course.percentage,
+            safeBunks,
+          };
+
+          const exactKey = [
             normalizeIdentifier(course.courseCode),
             normalizeIdentifier(course.componentName),
           ].join(":");
+          componentExactMap.set(exactKey, state);
 
-          const todayCount = subjectClassCount.get(key) || 0;
-          if (todayCount === 0) continue;
+          const codeKey = normalizeIdentifier(course.courseCode);
+          if (codeKey && !componentCodeMap.has(codeKey)) {
+            componentCodeMap.set(codeKey, state);
+          }
 
-          const safeBunks = calculateSafeBunks(course.present, course.total);
-          const name = course.courseName || course.courseCode || "Class";
-
-          if (course.percentage < 75) {
-            mustAttendAny = true;
-            lines.push(`${name}: attend (at ${Math.round(course.percentage)}%)`);
-          } else if (safeBunks > 0) {
-            const missable = Math.min(todayCount, safeBunks);
-            totalSafeBunksToday += missable;
-            lines.push(`${name}: can miss ${missable}`);
-          } else {
-            mustAttendAny = true;
-            lines.push(`${name}: try not to miss`);
+          const nameKey = normalizeIdentifier(course.courseName);
+          if (nameKey && !componentNameMap.has(nameKey)) {
+            componentNameMap.set(nameKey, state);
           }
         }
 
-        if (lines.length === 0) {
-          // Fallback if schedule entry didn't match specific courses directly
-          notificationBody = `Good morning! You have ${todayClasses.length} class${todayClasses.length > 1 ? "es" : ""} scheduled today. Check your plan in KIET Bunk Helper.`;
-        } else if (lines.length === 1) {
-          notificationBody = `Good morning!\nToday: ${lines[0]}`;
-        } else if (totalSafeBunksToday > 0 && !mustAttendAny) {
-          notificationBody = `Good morning!\nToday: You can miss ${totalSafeBunksToday} class${totalSafeBunksToday > 1 ? "es" : ""} and stay above 75%.`;
+        const classLines: string[] = [];
+
+        for (let i = 0; i < todayClasses.length; i++) {
+          const entry = todayClasses[i];
+          const lecNum = i + 1; // 1-based index for lecture number: Lec 1, Lec 2, etc.
+
+          const exactKey = [
+            normalizeIdentifier(entry.courseCode),
+            normalizeIdentifier(entry.courseCompName),
+          ].join(":");
+          const codeKey = normalizeIdentifier(entry.courseCode);
+          const nameKey = normalizeIdentifier(entry.courseName);
+
+          const state =
+            componentExactMap.get(exactKey) ||
+            (codeKey ? componentCodeMap.get(codeKey) : undefined) ||
+            (nameKey ? componentNameMap.get(nameKey) : undefined);
+
+          const subjectName =
+            state?.courseName || entry.courseName || entry.courseCode || "Class";
+
+          if (!state) {
+            classLines.push(`Lec ${lecNum} (${subjectName}): Check plan in app`);
+          } else if (state.percentage < 75) {
+            classLines.push(`Lec ${lecNum} (${subjectName}): Attend (${Math.round(state.percentage)}%)`);
+          } else if (state.safeBunks > 0) {
+            classLines.push(`Lec ${lecNum} (${subjectName}): Can miss`);
+            state.safeBunks -= 1; // Consume 1 safe bunk for this period
+          } else {
+            classLines.push(`Lec ${lecNum} (${subjectName}): Try not to miss`);
+          }
+        }
+
+        if (classLines.length === 0) {
+          notificationBody = `You have ${todayClasses.length} class${todayClasses.length > 1 ? "es" : ""} scheduled today. Check KIET Bunk Helper.`;
         } else {
-          notificationBody = `Good morning!\n` + lines.slice(0, 3).join("\n");
+          notificationBody = classLines.join("\n");
         }
 
         // Stale snapshot note for 24h-72h old snapshots

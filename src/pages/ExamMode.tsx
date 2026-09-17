@@ -2,6 +2,19 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Panel, EmptyMessage } from '../components/UI';
+import { HallTicketCard } from '../components/Attendance/HallTicketCard';
+import type { StudentDetails } from '../types/kiet';
+import type { SubjectSummary } from '../utils/attendanceCalculations';
+
+interface ExamModeProps {
+  attendance?: StudentDetails | null;
+  subjects?: SubjectSummary[];
+  overallSummary?: {
+    present: number;
+    total: number;
+    percentage: number;
+  } | null;
+}
 
 interface ExamResource {
   id: string;
@@ -120,7 +133,7 @@ function formatResourceType(type: string): string {
   }
 }
 
-export function ExamMode() {
+export function ExamMode({ attendance, subjects, overallSummary }: ExamModeProps = {}) {
   const navigate = useNavigate();
   const [resources, setResources] = useState<ExamResource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,7 +265,12 @@ export function ExamMode() {
   }
 
   return (
-    <section style={{ display: 'grid', gap: 14 }}>
+    <section style={{ display: 'grid', gap: 18 }}>
+      <HallTicketCard
+        attendance={attendance ?? null}
+        subjects={subjects ?? []}
+        overallSummary={overallSummary}
+      />
       <Panel
         title="Exam Mode"
         subtitle="Notes, PYQs, and key topics, organized and ready."
