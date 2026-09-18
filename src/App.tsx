@@ -478,7 +478,16 @@ function App() {
 
       // Non-blocking fire-and-forget Unified Snapshot save for notification subsystem
       if (attendanceData && fullWeekClasses.length > 0) {
-        const dedupeKey = `${attendanceData.studentId || "std"}-${sessionStatus.capturedAt || Date.now()}`;
+        const attendanceFingerprint = (attendanceData.attendanceCourseComponentInfoList || [])
+          .flatMap((c) =>
+            (c.attendanceCourseComponentNameInfoList || []).map(
+              (comp) => `${comp.numberOfPresent}:${comp.numberOfPeriods}:${comp.numberOfExtraAttendance}`
+            )
+          )
+          .join("|");
+        const todayDate = new Date().toISOString().slice(0, 10);
+        const dedupeKey = `${attendanceData.studentId || "std"}-${todayDate}-${attendanceFingerprint}`;
+
         if (lastSnapshotDedupeKeyRef.current !== dedupeKey) {
           lastSnapshotDedupeKeyRef.current = dedupeKey;
           void sendSnapshotAsync(attendanceData, fullWeekClasses).catch((snapshotErr) => {

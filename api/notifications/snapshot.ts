@@ -107,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const snapshotDate = capturedAt || new Date().toISOString();
+    const snapshotDate = new Date().toISOString();
 
     const { data, error } = await supabase
       .from("daily_attendance_snapshots")

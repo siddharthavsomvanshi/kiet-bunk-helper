@@ -16,7 +16,7 @@ export async function sendSnapshotAsync(
       return false;
     }
 
-    const payload = createUnifiedSnapshotPayload(attendance, schedule, session.capturedAt);
+    const payload = createUnifiedSnapshotPayload(attendance, schedule, Date.now());
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
