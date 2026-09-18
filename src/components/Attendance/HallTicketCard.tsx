@@ -133,16 +133,24 @@ export function HallTicketCard({ attendance, overallSummary }: HallTicketCardPro
   const handleDownloadPdf = async (option: HallTicketOption) => {
     setDownloadingId(option.id);
     try {
-      const blob = await downloadHallTicketPdfUnified(option.id);
+      const blob = await downloadHallTicketPdfUnified(option.id, resolvedStudentId);
       const url = URL.createObjectURL(blob);
       const cleanTitle = (option.title || 'Hall_Ticket').replace(/[^a-zA-Z0-9]/g, '_');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${cleanTitle}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      if (isIos) {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cleanTitle}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err: any) {
       alert(`Download failed: ${err.message || String(err)}`);
     } finally {
@@ -154,7 +162,7 @@ export function HallTicketCard({ attendance, overallSummary }: HallTicketCardPro
   const handlePreviewPdf = async (option: HallTicketOption) => {
     setPreviewingId(option.id);
     try {
-      const blob = await downloadHallTicketPdfUnified(option.id);
+      const blob = await downloadHallTicketPdfUnified(option.id, resolvedStudentId);
       const url = URL.createObjectURL(blob);
       setPreviewPdfUrl(url);
       setPreviewTitle(option.title);
@@ -471,7 +479,16 @@ export function HallTicketCard({ attendance, overallSummary }: HallTicketCardPro
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <a
+                  href={previewPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="action-button action-button--secondary"
+                  style={{ padding: '6px 14px', fontSize: 12, textDecoration: 'none' }}
+                >
+                  ↗ Open Fullscreen
+                </a>
                 <a
                   href={previewPdfUrl}
                   download={`${previewTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}

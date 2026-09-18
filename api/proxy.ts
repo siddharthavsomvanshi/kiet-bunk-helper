@@ -52,6 +52,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
   };
 
+  if (req.headers.accept) {
+    forwardHeaders["Accept"] = Array.isArray(req.headers.accept)
+      ? req.headers.accept[0]
+      : req.headers.accept;
+  }
+
   if (req.headers.authorization) {
     forwardHeaders["Authorization"] = Array.isArray(req.headers.authorization)
       ? req.headers.authorization[0]

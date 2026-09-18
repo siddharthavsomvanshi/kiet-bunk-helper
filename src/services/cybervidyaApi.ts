@@ -340,8 +340,31 @@ export async function fetchHallTicketOptionsDirect(sessionId: number | string): 
   return res.data || [];
 }
 
-export async function downloadHallTicketPdfDirect(hallTicketId: number | string): Promise<Blob> {
-  const session = getStoredSession();
+export async function downloadHallTicketPdfDirect(
+  hallTicketId: number | string,
+  studentId?: number | string | null
+): Promise<Blob> {
+  let session = getStoredSession();
+  let uid = studentId ?? session.studentId;
+
+  // Auto-resolve studentId if session token exists but studentId is missing
+  if (session.token && !uid) {
+    try {
+      const infoRes = await requestApi<{ data: Array<{ studentId?: number | string; sessionId?: number | string }> }>(
+        "/student/dashboard/registered-courses",
+        { _isInternalLookup: true }
+      );
+      const first = Array.isArray(infoRes?.data) ? infoRes.data[0] : null;
+      if (first?.studentId) {
+        saveStoredToken(session.token, first.studentId, first.sessionId);
+        session = getStoredSession();
+        uid = first.studentId;
+      }
+    } catch (e) {
+      console.warn("Failed automatic studentId resolution in PDF download:", e);
+    }
+  }
+
   const headers: Record<string, string> = {
     Accept: "application/pdf, application/octet-stream, */*",
   };
@@ -349,14 +372,18 @@ export async function downloadHallTicketPdfDirect(hallTicketId: number | string)
   if (session.token) {
     headers["Authorization"] = session.token;
   }
-  if (session.studentId) {
-    headers["UID"] = String(session.studentId);
+  if (uid) {
+    headers["UID"] = String(uid);
   }
 
   const response = await fetch(`${API_BASE}/report/pdf/exam/student/hall-ticket/download/${hallTicketId}`, {
     method: "GET",
     headers,
   });
+
+  if (response.status === 401) {
+    throw new Error("CyberVidya session expired or Unauthorized (HTTP 401). Please re-login to CyberVidya.");
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to download Hall Ticket PDF (HTTP ${response.status})`);
@@ -441,8 +468,11 @@ export async function fetchHallTicketOptionsUnified(sessionId: number | string):
   return callExtension("FETCH_HALL_TICKET_OPTIONS", { sessionId });
 }
 
-export async function downloadHallTicketPdfUnified(hallTicketId: number | string): Promise<Blob> {
-  return downloadHallTicketPdfDirect(hallTicketId);
+export async function downloadHallTicketPdfUnified(
+  hallTicketId: number | string,
+  studentId?: number | string | null
+): Promise<Blob> {
+  return downloadHallTicketPdfDirect(hallTicketId, studentId);
 }
 
 export async function clearSessionUnified() {
