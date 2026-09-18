@@ -51,6 +51,8 @@ import { sendSnapshotAsync } from "./services/notificationService";
 
 import { FooterCollaborators } from "./components/FooterCollaborators";
 import { MultiversePage } from "./pages/Multiverse";
+import { WhatsNewModal } from "./components/WhatsNewModal";
+import { NotificationGuideModal } from "./components/NotificationGuideModal";
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -161,6 +163,7 @@ function App() {
   const [streakSubjectAbsencesByDate, setStreakSubjectAbsencesByDate] =
     useState<SubjectAbsencesByDate>({});
   const [streakLoading, setStreakLoading] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const [error, setError] = useState("");
   const location = useLocation();
 
@@ -1022,6 +1025,11 @@ function App() {
         </footer>
 
       </div>
+      <WhatsNewModal onOpenGuide={() => setShowGuideModal(true)} />
+      <NotificationGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
       <Analytics />
     </main>
   );

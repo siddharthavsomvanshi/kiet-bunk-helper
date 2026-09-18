@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { NotificationGuideModal } from "./NotificationGuideModal";
 import {
   isPushSupported,
   getNotificationPermissionState,
@@ -16,6 +17,7 @@ export function NotificationBanner({ studentName }: { studentName?: string }) {
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
@@ -130,116 +132,142 @@ export function NotificationBanner({ studentName }: { studentName?: string }) {
   }
 
   return (
-    <section
-      className="standard-card rise-in"
-      style={{
-        padding: "14px 18px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 12,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
-        marginTop: 12,
-        marginBottom: 12,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 20 }}>🔔</span>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-            Smart Daily Notifications (8:00 AM IST)
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            {permission === "denied"
-              ? "Notifications blocked in browser settings"
-              : isEnabled
-              ? "Daily morning attendance recommendations are ON"
-              : "Get personalized attendance advice every morning"}
+    <>
+      <section
+        className="standard-card rise-in"
+        style={{
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 12,
+          marginTop: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>🔔</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+              Smart Daily Notifications (8:00 AM IST)
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              {permission === "denied"
+                ? "Notifications blocked in browser settings"
+                : isEnabled
+                ? "Daily morning attendance recommendations are ON"
+                : "Get personalized attendance advice every morning"}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {permission === "denied" ? (
-          <span style={{ fontSize: 12, color: "var(--danger)", fontWeight: 600 }}>Blocked</span>
-        ) : isEnabled ? (
-          <>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            style={{
+              padding: "6px 12px",
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: 6,
+              border: "1px solid var(--border)",
+              background: "var(--bg-card-subtle)",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            💡 How it Works
+          </button>
+
+          {permission === "denied" ? (
+            <span style={{ fontSize: 12, color: "var(--danger)", fontWeight: 600 }}>Blocked</span>
+          ) : isEnabled ? (
+            <>
+              <button
+                type="button"
+                onClick={handleTestPush}
+                disabled={loading}
+                style={{
+                  padding: "6px 12px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  cursor: loading ? "wait" : "pointer",
+                }}
+              >
+                Test Push
+              </button>
+              <button
+                type="button"
+                onClick={handleDisable}
+                disabled={loading}
+                style={{
+                  padding: "6px 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  cursor: loading ? "wait" : "pointer",
+                }}
+              >
+                {loading ? "Disabling..." : "Disable"}
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              onClick={handleTestPush}
-              disabled={loading}
-              style={{
-                padding: "6px 12px",
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 6,
-                border: "1px solid var(--border)",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                cursor: loading ? "wait" : "pointer",
-              }}
-            >
-              Test Push
-            </button>
-            <button
-              type="button"
-              onClick={handleDisable}
+              onClick={handleEnable}
               disabled={loading}
               style={{
                 padding: "6px 14px",
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 borderRadius: 6,
-                border: "1px solid var(--border)",
-                background: "transparent",
-                color: "var(--text-secondary)",
+                border: "none",
+                background: "var(--primary)",
+                color: "#fff",
                 cursor: loading ? "wait" : "pointer",
               }}
             >
-              {loading ? "Disabling..." : "Disable"}
+              {loading ? "Enabling..." : "Enable"}
             </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={handleEnable}
-            disabled={loading}
+          )}
+        </div>
+
+        {message && (
+          <div
             style={{
-              padding: "6px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              borderRadius: 6,
-              border: "none",
-              background: "var(--primary)",
-              color: "#fff",
-              cursor: loading ? "wait" : "pointer",
+              width: "100%",
+              fontSize: 12,
+              marginTop: 4,
+              color:
+                message.type === "success"
+                  ? "var(--success)"
+                  : message.type === "error"
+                  ? "var(--danger)"
+                  : "var(--text-muted)",
             }}
           >
-            {loading ? "Enabling..." : "Enable"}
-          </button>
+            {message.text}
+          </div>
         )}
-      </div>
+      </section>
 
-      {message && (
-        <div
-          style={{
-            width: "100%",
-            fontSize: 12,
-            marginTop: 4,
-            color:
-              message.type === "success"
-                ? "var(--success)"
-                : message.type === "error"
-                ? "var(--danger)"
-                : "var(--text-muted)",
-          }}
-        >
-          {message.text}
-        </div>
-      )}
-    </section>
+      <NotificationGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+        onEnable={handleEnable}
+        isEnabled={isEnabled}
+      />
+    </>
   );
 }
