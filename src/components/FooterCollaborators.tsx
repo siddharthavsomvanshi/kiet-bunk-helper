@@ -29,6 +29,16 @@ export const PROJECT_LEADS: Contributor[] = [
   },
 ];
 
+export const CREATIVE_DIRECTORS: Contributor[] = [
+  {
+    login: "thefaizan313",
+    name: "Faizan",
+    avatar_url: "https://github.com/thefaizan313.png",
+    html_url: "https://github.com/thefaizan313",
+    role: "Creative Director",
+  },
+];
+
 export const STATIC_CO_FOUNDERS: Contributor[] = [
   {
     login: "tarun1899",
@@ -100,11 +110,12 @@ export function FooterCollaborators() {
     };
   }, []);
 
-  // Filter out main founder, project lead, and vercel/bot accounts from co-founders list
+  // Filter out main founder, project lead, creative director, and vercel/bot accounts from co-founders list
   const nonMainFounders = coFounders.filter(
     (c) =>
       !FOUNDERS.some((f) => f.login.toLowerCase() === c.login.toLowerCase()) &&
       !PROJECT_LEADS.some((p) => p.login.toLowerCase() === c.login.toLowerCase()) &&
+      !CREATIVE_DIRECTORS.some((cd) => cd.login.toLowerCase() === c.login.toLowerCase()) &&
       !c.login.toLowerCase().includes("vercel") &&
       !c.login.toLowerCase().includes("[bot]")
   );
@@ -249,6 +260,69 @@ export function FooterCollaborators() {
                 }}
               >
                 Project Lead
+              </span>
+            </a>
+          ))}
+        </div>
+
+        {/* Creative Director */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "var(--text-muted)",
+            }}
+          >
+            Creative Director:
+          </span>
+          {CREATIVE_DIRECTORS.map((director) => (
+            <a
+              key={director.login}
+              href={director.html_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "5px 12px 5px 6px",
+                borderRadius: 20,
+                background: "var(--bg-section)",
+                border: "1px solid var(--border)",
+                textDecoration: "none",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 0.15s ease",
+              }}
+              title={`${director.name || director.login} (${director.role || "Creative Director"})`}
+            >
+              <img
+                src={director.avatar_url}
+                alt={director.login}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "1.5px solid var(--warning)",
+                }}
+              />
+              <span>@{director.login}</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  padding: "2px 7px",
+                  borderRadius: 10,
+                  background: "var(--warning-soft)",
+                  color: "var(--warning)",
+                  fontWeight: 700,
+                }}
+              >
+                Creative Director
               </span>
             </a>
           ))}
