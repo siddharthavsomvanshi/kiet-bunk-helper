@@ -19,6 +19,16 @@ export const FOUNDERS: Contributor[] = [
   },
 ];
 
+export const PROJECT_LEADS: Contributor[] = [
+  {
+    login: "vanshsrivastava14",
+    name: "Vansh Srivastava",
+    avatar_url: "https://github.com/vanshsrivastava14.png",
+    html_url: "https://github.com/vanshsrivastava14",
+    role: "Project Lead",
+  },
+];
+
 export const STATIC_CO_FOUNDERS: Contributor[] = [
   {
     login: "tarun1899",
@@ -90,10 +100,11 @@ export function FooterCollaborators() {
     };
   }, []);
 
-  // Filter out main founder and vercel/bot accounts from co-founders list
+  // Filter out main founder, project lead, and vercel/bot accounts from co-founders list
   const nonMainFounders = coFounders.filter(
     (c) =>
       !FOUNDERS.some((f) => f.login.toLowerCase() === c.login.toLowerCase()) &&
+      !PROJECT_LEADS.some((p) => p.login.toLowerCase() === c.login.toLowerCase()) &&
       !c.login.toLowerCase().includes("vercel") &&
       !c.login.toLowerCase().includes("[bot]")
   );
@@ -175,6 +186,69 @@ export function FooterCollaborators() {
                 }}
               >
                 Founder
+              </span>
+            </a>
+          ))}
+        </div>
+
+        {/* Project Lead */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "var(--text-muted)",
+            }}
+          >
+            Project Lead:
+          </span>
+          {PROJECT_LEADS.map((lead) => (
+            <a
+              key={lead.login}
+              href={lead.html_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "5px 12px 5px 6px",
+                borderRadius: 20,
+                background: "var(--bg-section)",
+                border: "1px solid var(--border)",
+                textDecoration: "none",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontWeight: 600,
+                transition: "all 0.15s ease",
+              }}
+              title={`${lead.name || lead.login} (${lead.role || "Project Lead"})`}
+            >
+              <img
+                src={lead.avatar_url}
+                alt={lead.login}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "1.5px solid var(--info)",
+                }}
+              />
+              <span>@{lead.login}</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  padding: "2px 7px",
+                  borderRadius: 10,
+                  background: "var(--info-soft)",
+                  color: "var(--info)",
+                  fontWeight: 700,
+                }}
+              >
+                Project Lead
               </span>
             </a>
           ))}
